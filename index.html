@@ -16,23 +16,19 @@
         .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
         .menu a:hover { background:#222; }
         .content { padding:16px; padding-bottom:80px; }
-        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
-        .week-input input[type="date"] { flex:1; padding:14px 16px; background:#222; border:2px solid #333; color:#fff; border-radius:12px; font-size:17px; }
-        .split-selector { padding:12px 16px; background:#181818; border-radius:12px; margin-bottom:16px; }
-        .day-buttons { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; background:#181818; }
-        .day-btn { flex:1; min-width:68px; padding:14px 8px; background:#222; border:none; color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
-        .day-btn.active { background:var(--accent); color:#111; transform:scale(1.05); }
-        .day-header { font-size:24px; font-weight:700; margin:8px 0 18px; }
-        .exercise { background:#1c1c1c; margin-bottom:22px; border-radius:16px; overflow:hidden; }
-        .exercise-name { padding:18px 20px 14px; font-size:20px; font-weight:700; }
-        table { width:100%; border-collapse:collapse; }
-        th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
-        td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
-        input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
-        input[type="number"].provisional { color:#888; font-style:italic; }
-        input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
-        .trend { font-size:20px; font-weight:bold; width:24px; }
-        button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
+        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; cursor:pointer; }
+        .week-input span { flex-shrink:0; }
+        .week-input .value { flex:1; padding:14px 16px; background:#222; border:2px solid #333; border-radius:12px; font-size:17px; text-align:center; }
+        .calendar-modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
+        .calendar-content { background:#181818; border-radius:16px; width:92%; max-width:360px; padding:20px; }
+        .calendar-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:18px; font-weight:600; }
+        .calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
+        .calendar-grid .day-name { font-size:12px; color:#888; padding:8px 0; }
+        .calendar-grid .day { padding:12px 0; border-radius:8px; font-size:16px; cursor:pointer; }
+        .calendar-grid .day.today { background:#333; }
+        .calendar-grid .day.selected-week { background:#00ff9d; color:#111; font-weight:700; }
+        .calendar-grid .week-number { font-size:12px; color:#00ff9d; width:24px; text-align:right; padding-right:8px; }
+        .close-btn { background:#333; color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:600; margin-top:16px; width:100%; }
     </style>
 </head>
 <body>
@@ -50,9 +46,9 @@
     </div>
 
     <div class="content">
-        <div class="week-input">
+        <div class="week-input" onclick="showCalendar()">
             <span>Week commencing:</span>
-            <input type="date" id="week-commencing">
+            <div id="week-display" class="value">30/03/2026</div>
         </div>
 
         <div class="split-selector">
@@ -67,10 +63,26 @@
         <button onclick="saveWorkout()" class="save-btn">Save & Finish Workout</button>
     </div>
 
+    <!-- Calendar Modal -->
+    <div id="calendar-modal" class="calendar-modal">
+        <div class="calendar-content">
+            <div class="calendar-header">
+                <button onclick="prevMonth()" style="background:none;border:none;color:#fff;font-size:24px;">‹</button>
+                <div id="calendar-title" style="font-weight:700;">April 2026</div>
+                <button onclick="nextMonth()" style="background:none;border:none;color:#fff;font-size:24px;">›</button>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Filled by JS -->
+            </div>
+            <button onclick="hideCalendar()" class="close-btn">Close</button>
+        </div>
+    </div>
+
     <script>
         let currentSplitId = localStorage.getItem('lastSelectedSplit') || "default";
         let currentDayIndex = 0;
         let unsavedDrafts = JSON.parse(localStorage.getItem('unsavedDrafts') || '{}');
+        let currentCalendarDate = new Date();
 
         const defaultPlan = { id: "default", name: "Alex's Plan", days: [
             { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
@@ -169,7 +181,7 @@
             let isProvisional = false;
 
             if (!useLog) {
-                const week = document.getElementById('week-commencing').value;
+                const week = document.getElementById('week-commencing').value || getMonday(new Date().toISOString().split('T')[0]);
                 const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
                 const existing = history.find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
                 if (existing) useLog = existing.log;
@@ -207,7 +219,6 @@
             });
             container.innerHTML = html;
 
-            // Auto-copy from first set
             const exercisesDivs = container.querySelectorAll('.exercise');
             exercisesDivs.forEach(exercise => {
                 const rows = exercise.querySelectorAll('tr');
@@ -316,13 +327,7 @@
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-            document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
-
-            const weekInput = document.getElementById('week-commencing');
-            weekInput.addEventListener('change', () => {
-                weekInput.value = getMonday(weekInput.value);
-                renderWorkout();          // ← THIS WAS MISSING – NOW FIXED
-            });
+            updateWeekDisplay(monday);
 
             const params = new URLSearchParams(window.location.search);
             const pastIndex = params.get('pastIndex');
@@ -342,6 +347,79 @@
             renderSplitSelector();
             renderDayButtons();
             renderWorkout();
+        }
+
+        // Calendar functions
+        function showCalendar() {
+            document.getElementById('calendar-modal').style.display = 'flex';
+            renderCalendar(currentCalendarDate);
+        }
+
+        function hideCalendar() {
+            document.getElementById('calendar-modal').style.display = 'none';
+        }
+
+        function renderCalendar(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            document.getElementById('calendar-title').textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let html = `<div class="day-name">Mon</div><div class="day-name">Tue</div><div class="day-name">Wed</div><div class="day-name">Thu</div><div class="day-name">Fri</div><div class="day-name">Sat</div><div class="day-name">Sun</div>`;
+
+            // Empty slots before first day
+            for (let i = 0; i < (firstDay === 0 ? 6 : firstDay - 1); i++) {
+                html += `<div></div>`;
+            }
+
+            const today = new Date();
+            const selectedMonday = new Date(document.getElementById('week-commencing').value || getMonday(today.toISOString().split('T')[0]));
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const thisDate = new Date(year, month, day);
+                const mondayOfWeek = new Date(thisDate);
+                mondayOfWeek.setDate(thisDate.getDate() - thisDate.getDay() + (thisDate.getDay() === 0 ? -6 : 1));
+
+                const isSelectedWeek = mondayOfWeek.toDateString() === selectedMonday.toDateString();
+                const isToday = thisDate.toDateString() === today.toDateString();
+
+                html += `<div onclick="selectDate(${year},${month},${day});" class="day ${isToday ? 'today' : ''} ${isSelectedWeek ? 'selected-week' : ''}">${day}</div>`;
+            }
+
+            document.getElementById('calendar-grid').innerHTML = html;
+        }
+
+        function selectDate(year, month, day) {
+            const selected = new Date(year, month, day);
+            const monday = new Date(selected);
+            monday.setDate(selected.getDate() - selected.getDay() + (selected.getDay() === 0 ? -6 : 1));
+            document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
+            updateWeekDisplay(monday);
+            hideCalendar();
+            renderWorkout();
+        }
+
+        function prevMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar(currentCalendarDate);
+        }
+
+        function nextMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar(currentCalendarDate);
+        }
+
+        function updateWeekDisplay(date) {
+            const display = document.getElementById('week-display');
+            const d = new Date(date);
+            display.textContent = d.toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'});
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
         }
 
         window.onload = startApp;
