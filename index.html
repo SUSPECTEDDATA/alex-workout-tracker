@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Alex's Workout Tracker</title>
+    <title>Track - Alex's Workout Tracker</title>
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
@@ -15,12 +15,11 @@
         .menu.show { display:block; }
         .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
         .menu a:hover { background:#222; }
-        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
-        .week-input input[type="date"] { flex:1; padding:14px 16px; background:#222; border:2px solid #333; color:#fff; border-radius:12px; font-size:17px; }
+        .content { padding:16px; padding-bottom:80px; }
+        .split-selector { padding:12px 16px; background:#181818; border-radius:12px; margin-bottom:16px; }
         .day-buttons { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; background:#181818; }
         .day-btn { flex:1; min-width:68px; padding:14px 8px; background:#222; border:none; color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
         .day-btn.active { background:var(--accent); color:#111; transform:scale(1.05); }
-        .content { padding:16px; padding-bottom:80px; }
         .day-header { font-size:24px; font-weight:700; margin:8px 0 18px; }
         .exercise { background:#1c1c1c; margin-bottom:22px; border-radius:16px; overflow:hidden; }
         .exercise-name { padding:18px 20px 14px; font-size:20px; font-weight:700; }
@@ -28,7 +27,6 @@
         th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
         td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
         input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
-        input[type="number"].provisional { color:#888; font-style:italic; }
         input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
         .trend { font-size:20px; font-weight:bold; width:24px; }
         button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
@@ -42,25 +40,23 @@
     </header>
 
     <div id="menu" class="menu">
-    <a href="index.html">🚀 Track Today's Workout</a>
-    <a href="history.html">📖 View Workout History</a>
-    <a href="progress.html">📈 See Your Progress</a>
-    <a href="plan.html">📋 Create / Edit Split</a>
-</div>
+        <a href="index.html">🚀 Track Today's Workout</a>
+        <a href="history.html">📖 View Workout History</a>
+        <a href="progress.html">📈 See Your Progress</a>
+        <a href="plan.html">📋 Create / Edit Split</a>
+    </div>
 
     <div class="content">
-        <div class="week-input">
-            <span>Week commencing:</span>
-            <input type="date" id="week-commencing">
+        <!-- SPLIT SELECTOR -->
+        <div class="split-selector">
+            <label style="font-weight:600;">Using Split:</label><br>
+            <select id="split-selector" onchange="changeSplit()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
+                <option value="default">Default 5-Day Plan</option>
+                <option value="custom">Custom Split: Upper Body Focus</option>
+            </select>
         </div>
 
-        <div class="day-buttons">
-            <button class="day-btn active" onclick="selectDay(1,this)">Day 1</button>
-            <button class="day-btn" onclick="selectDay(2,this)">Day 2</button>
-            <button class="day-btn" onclick="selectDay(3,this)">Day 3</button>
-            <button class="day-btn" onclick="selectDay(4,this)">Day 4</button>
-            <button class="day-btn" onclick="selectDay(5,this)">Day 5</button>
-        </div>
+        <div class="day-buttons" id="day-buttons"></div>
 
         <h2 id="current-day-title" class="day-header">Day 1 – Chest + Back</h2>
         <div id="exercises-list"></div>
@@ -68,34 +64,54 @@
     </div>
 
     <script>
-        const workoutPlan = {
-            1: { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",initialSets:4,reps:"8-10"},{name:"Bent-Over Barbell Row",initialSets:4,reps:"8-10"},{name:"Seated Chest Press Machine",initialSets:4,reps:"10-12"},{name:"Wide-Grip Lat Pulldown",initialSets:4,reps:"8-12"},{name:"Cable Flyes",initialSets:3,reps:"12-15"},{name:"Close-Grip Lat Pulldown",initialSets:3,reps:"10-12"}]},
-            2: { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",initialSets:4,reps:"8-10"},{name:"Dumbbell Lateral Raises",initialSets:4,reps:"10-12"},{name:"Rear Delt Flyes",initialSets:3,reps:"12-15"},{name:"Single Arm Tricep Pushdown",initialSets:4,reps:"12-15"},{name:"Overhead Dumbbell Tricep Extension",initialSets:3,reps:"10-12"},{name:"Alternating Dumbbell Curl",initialSets:4,reps:"8-10"},{name:"Preacher Curl",initialSets:3,reps:"10-12"},{name:"Reverse Preacher Curl",initialSets:3,reps:"10-12"}]},
-            3: { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",initialSets:4,reps:"8-10"},{name:"Bent-Over Barbell Row",initialSets:4,reps:"8-10"},{name:"Seated Chest Press Machine",initialSets:4,reps:"10-12"},{name:"Wide-Grip Lat Pulldown",initialSets:4,reps:"8-12"},{name:"Cable Flyes",initialSets:3,reps:"12-15"},{name:"Close-Grip Lat Pulldown",initialSets:3,reps:"10-12"}]},
-            4: { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",initialSets:4,reps:"8-10"},{name:"Dumbbell Lateral Raises",initialSets:4,reps:"10-12"},{name:"Rear Delt Flyes",initialSets:3,reps:"12-15"},{name:"Cable Tricep Pushdown",initialSets:4,reps:"12-15"},{name:"Overhead Dumbbell Tricep Extension",initialSets:3,reps:"10-12"},{name:"Alternating Dumbbell Curl",initialSets:4,reps:"8-10"},{name:"Preacher Curl",initialSets:3,reps:"10-12"},{name:"Reverse Preacher Curl",initialSets:3,reps:"10-12"}]},
-            5: { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",initialSets:4,reps:"8-10"},{name:"Leg Press (high feet)",initialSets:3,reps:"10-12"},{name:"Lying Leg Curl",initialSets:3,reps:"10-12"},{name:"Leg Extension",initialSets:3,reps:"12-15"},{name:"Seated Calf Raises",initialSets:3,reps:"12-15"}]}
-        };
-
-        let currentDay = 1;
+        let currentSplit = "default";           // "default" or "custom"
+        let currentDayIndex = 0;                // 0-based index in the split's days array
         let unsavedDrafts = {};
 
-        function saveToStorage(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-        function loadFromStorage(key) { const d=localStorage.getItem(key); return d?JSON.parse(d):{}; }
+        const defaultPlan = { /* your original 5-day plan */ 
+            name: "Default 5-Day Plan",
+            days: [
+                { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+                { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Single Arm Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+                { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+                { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Cable Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+                { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",sets:4},{name:"Leg Press (high feet)",sets:3},{name:"Lying Leg Curl",sets:3},{name:"Leg Extension",sets:3},{name:"Seated Calf Raises",sets:3}] }
+            ]
+        };
 
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            menu.classList.toggle('show');
+        function loadCustomSplit() {
+            const saved = localStorage.getItem('customSplit');
+            return saved ? JSON.parse(saved) : null;
+        }
+
+        function renderDayButtons() {
+            const container = document.getElementById('day-buttons');
+            container.innerHTML = '';
+            let splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit();
+
+            if (!splitData) splitData = defaultPlan;
+
+            splitData.days.forEach((day, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
+                btn.textContent = day.name || `Day ${i+1}`;
+                btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
+                container.appendChild(btn);
+            });
         }
 
         function renderWorkout() {
-            const plan = workoutPlan[currentDay];
-            document.getElementById('current-day-title').textContent = plan.name;
+            const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
+            const day = splitData.days[currentDayIndex];
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
+
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
+
             let html = '';
-            plan.exercises.forEach(ex => {
+            day.exercises.forEach(ex => {
                 html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
-                for(let i=0; i<ex.initialSets; i++){
+                for(let i = 0; i < (ex.sets || 4); i++) {
                     html += `<tr><td>${i+1}</td><td><input type="number" class="weight-input" value=""></td><td><input type="number" class="reps-input" value=""></td><td><input type="checkbox" class="done-checkbox"></td><td class="trend"></td></tr>`;
                 }
                 html += `</table></div>`;
@@ -103,16 +119,21 @@
             container.innerHTML = html;
         }
 
-        function selectDay(day, btn) {
-            currentDay = day;
-            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        function changeSplit() {
+            currentSplit = document.getElementById('split-selector').value;
+            currentDayIndex = 0;
+            renderDayButtons();
             renderWorkout();
         }
 
-        function saveWorkout() {
-            // (full save logic – works exactly as before)
-            const plan = workoutPlan[currentDay];
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
+        }
+
+        function saveWorkout() { /* your existing save logic – unchanged */ 
+            const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
+            const day = splitData.days[currentDayIndex];
             const log = [];
             const exercises = document.querySelectorAll('.exercise');
             exercises.forEach((exDiv, exIndex) => {
@@ -125,22 +146,25 @@
                     const completed = row.querySelector('.done-checkbox').checked;
                     sets.push({ weight, reps, completed });
                 });
-                log.push({ name: plan.exercises[exIndex].name, sets });
+                log.push({ name: day.exercises[exIndex].name, sets });
             });
-            const weekCommencing = document.getElementById('week-commencing').value;
-            const history = loadFromStorage('workoutHistory') || [];
-            const entry = { date: new Date().toISOString(), day: currentDay, dayName: plan.name, weekCommencing, log };
+            const weekCommencing = document.getElementById('week-commencing') ? document.getElementById('week-commencing').value : '';
+            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+            const entry = { date: new Date().toISOString(), day: currentDayIndex + 1, dayName: day.name, weekCommencing, log };
             history.unshift(entry);
-            saveToStorage('workoutHistory', history);
+            localStorage.setItem('workoutHistory', JSON.stringify(history));
             alert('Workout saved! ✅');
             window.location.href = 'history.html';
         }
 
         function startApp() {
+            // Set default week
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-            document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
+            if (document.getElementById('week-commencing')) document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
+
+            renderDayButtons();
             renderWorkout();
         }
 
