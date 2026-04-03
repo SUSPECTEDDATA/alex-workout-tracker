@@ -186,6 +186,7 @@
         }
 
         function renderWorkout(preFillLog = null) {
+            console.log("✅ renderWorkout started for Day", currentDay);
             const plan = workoutPlan[currentDay];
             document.getElementById('current-day-title').textContent = plan.name;
             const container = document.getElementById('exercises-list');
@@ -243,15 +244,7 @@
                 html += `</table></div>`;
             });
             container.innerHTML = html;
-
-            const allInputs = container.querySelectorAll('input.weight-input, input.reps-input, input.done-checkbox');
-            allInputs.forEach(input => {
-                input.addEventListener('change', () => {
-                    if (input.classList.contains('provisional')) input.classList.remove('provisional');
-                    captureUnsavedData();
-                    renderWorkout();
-                });
-            });
+            console.log("✅ Exercises rendered:", plan.exercises.length);
         }
 
         window.saveWorkout = function() {
