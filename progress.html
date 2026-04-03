@@ -7,105 +7,63 @@
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0; padding: 0; background: #0f0f0f; color: #fff;
-            max-width: 600px; margin: 0 auto; min-height: 100vh;
-        }
-        header {
-            background: #181818; padding: 20px 16px; border-bottom: 3px solid var(--accent);
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        h1 { margin: 0; font-size: 24px; font-weight: 700; }
-        .content { padding: 16px; }
-        .stat-card {
-            background: #1c1c1c; 
-            padding: 20px; 
-            margin-bottom: 16px; 
-            border-radius: 16px;
-        }
-        .best-item {
-            background: #1c1c1c; 
-            padding: 18px; 
-            margin-bottom: 12px; 
-            border-radius: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .back-btn {
-            background: #333;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; padding:0; background:#0f0f0f; color:#fff; max-width:600px; margin:0 auto; min-height:100vh; }
+        header { background:#181818; padding:20px 16px; border-bottom:3px solid var(--accent); display:flex; align-items:center; justify-content:space-between; }
+        h1 { margin:0; font-size:24px; font-weight:700; }
+        .hamburger { font-size:28px; background:none; border:none; color:#fff; cursor:pointer; padding:8px; }
+        .menu { display:none; position:absolute; top:68px; right:16px; background:#181818; border-radius:16px; padding:12px 0; box-shadow:0 10px 20px rgba(0,0,0,0.5); width:280px; z-index:1000; }
+        .menu.show { display:block; }
+        .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
+        .menu a:hover { background:#222; }
+        .content { padding:16px; }
+        .stat-card { background:#1c1c1c; padding:20px; margin-bottom:16px; border-radius:16px; }
+        .best-item { background:#1c1c1c; padding:18px; margin-bottom:12px; border-radius:16px; display:flex; justify-content:space-between; align-items:center; }
     </style>
 </head>
 <body>
 
     <header>
         <h1>📈 Your Progress</h1>
-        <a href="index.html" class="back-btn">← Home</a>
+        <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
+
+    <div id="menu" class="menu">
+        <a href="index.html">🚀 Track Today's Workout</a>
+        <a href="history.html">📖 View Workout History</a>
+        <a href="progress.html">📈 See Your Progress</a>
+    </div>
 
     <div class="content">
         <div class="stat-card">
             <h2 style="margin:0 0 8px 0;">Total Workouts Completed</h2>
             <div id="total-workouts" style="font-size:48px;font-weight:700;color:var(--accent);">0</div>
         </div>
-
         <h2 style="margin:24px 0 12px 0;">Personal Bests</h2>
         <div id="bests-list"></div>
     </div>
 
     <script>
-        function loadFromStorage(key) {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : [];
+        function loadFromStorage(key) { const data = localStorage.getItem(key); return data ? JSON.parse(data) : []; }
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
         }
 
-        function getAllExercises() {
-            return [
-                "Barbell Bench Press", "Bent-Over Barbell Row", "Seated Chest Press Machine",
-                "Wide-Grip Lat Pulldown", "Cable Flyes", "Close-Grip Lat Pulldown",
-                "Standing Overhead Barbell Press", "Dumbbell Lateral Raises", "Rear Delt Flyes",
-                "Single Arm Tricep Pushdown", "Overhead Dumbbell Tricep Extension",
-                "Alternating Dumbbell Curl", "Preacher Curl", "Reverse Preacher Curl",
-                "Barbell Back Squat", "Leg Press (high feet)", "Lying Leg Curl",
-                "Leg Extension", "Seated Calf Raises"
-            ];
-        }
+        function getAllExercises() { /* same list as before */ return ["Barbell Bench Press","Bent-Over Barbell Row","Seated Chest Press Machine","Wide-Grip Lat Pulldown","Cable Flyes","Close-Grip Lat Pulldown","Standing Overhead Barbell Press","Dumbbell Lateral Raises","Rear Delt Flyes","Single Arm Tricep Pushdown","Overhead Dumbbell Tricep Extension","Alternating Dumbbell Curl","Preacher Curl","Reverse Preacher Curl","Barbell Back Squat","Leg Press (high feet)","Lying Leg Curl","Leg Extension","Seated Calf Raises"]; }
 
         function calculatePersonalBests() {
             const history = loadFromStorage('workoutHistory');
             const bests = {};
-
             getAllExercises().forEach(exName => {
                 let maxWeight = 0;
-                let maxVolume = 0;
-                let bestReps = 0;
-
                 history.forEach(entry => {
                     const ex = entry.log.find(e => e.name === exName);
-                    if (ex) {
-                        ex.sets.forEach(set => {
-                            const w = parseFloat(set.weight) || 0;
-                            const r = parseFloat(set.reps) || 0;
-                            const volume = w * r;
-                            if (w > maxWeight) maxWeight = w;
-                            if (volume > maxVolume) {
-                                maxVolume = volume;
-                                bestReps = r;
-                            }
-                        });
-                    }
+                    if (ex) ex.sets.forEach(set => {
+                        const w = parseFloat(set.weight) || 0;
+                        if (w > maxWeight) maxWeight = w;
+                    });
                 });
-
-                if (maxWeight > 0) {
-                    bests[exName] = { maxWeight, bestReps, maxVolume };
-                }
+                if (maxWeight > 0) bests[exName] = maxWeight;
             });
             return bests;
         }
@@ -113,28 +71,13 @@
         function renderProgress() {
             const history = loadFromStorage('workoutHistory');
             document.getElementById('total-workouts').textContent = history.length;
-
             const bests = calculatePersonalBests();
             const container = document.getElementById('bests-list');
             let html = '';
-
             Object.keys(bests).forEach(name => {
-                const b = bests[name];
-                html += `
-                <div class="best-item">
-                    <div>
-                        <strong>${name}</strong><br>
-                        <small style="color:#888;">Best set: ${b.maxWeight} kg × ${b.bestReps}</small>
-                    </div>
-                    <div style="font-size:28px;font-weight:700;color:var(--accent);">
-                        ${b.maxWeight} kg
-                    </div>
-                </div>`;
+                html += `<div class="best-item"><div><strong>${name}</strong></div><div style="font-size:28px;font-weight:700;color:var(--accent);">${bests[name]} kg</div></div>`;
             });
-
-            if (html === '') {
-                html = `<p style="color:#666;text-align:center;padding:60px 20px;">No personal bests yet.<br>Start tracking workouts to see them here!</p>`;
-            }
+            if (html === '') html = `<p style="color:#666;text-align:center;padding:60px 20px;">No personal bests yet.<br>Start tracking workouts!</p>`;
             container.innerHTML = html;
         }
 
