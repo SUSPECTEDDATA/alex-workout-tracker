@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plan - Alex's Workout Tracker</title>
+    <style>
+        :root { --accent: #00ff9d; }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; padding:0; background:#0f0f0f; color:#fff; max-width:600px; margin:0 auto; min-height:100vh; }
+        header { background:#181818; padding:20px 16px; border-bottom:3px solid var(--accent); display:flex; align-items:center; justify-content:space-between; }
+        h1 { margin:0; font-size:24px; font-weight:700; }
+        .hamburger { font-size:28px; background:none; border:none; color:#fff; cursor:pointer; padding:8px; }
+        .menu { display:none; position:absolute; top:68px; right:16px; background:#181818; border-radius:16px; padding:12px 0; box-shadow:0 10px 20px rgba(0,0,0,0.5); width:280px; z-index:1000; }
+        .menu.show { display:block; }
+        .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
+        .menu a:hover { background:#222; }
+        .content { padding:16px; }
+        .section { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:16px; }
+        .day { background:#222; padding:16px; margin-bottom:16px; border-radius:12px; }
+        .body-part-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:8px; margin:12px 0; }
+        .body-part-grid label { background:#181818; padding:10px; border-radius:10px; text-align:center; cursor:pointer; }
+        .exercise-row { display:flex; gap:8px; margin-bottom:8px; }
+        .exercise-row input { flex:1; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; padding:10px; }
+        button.add-btn { background:var(--accent); color:#111; border:none; padding:12px 20px; border-radius:12px; font-weight:700; margin-top:12px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📋 Create Workout Split</h1>
+        <button onclick="toggleMenu()" class="hamburger">☰</button>
+    </header>
+
+    <div id="menu" class="menu">
+        <a href="index.html">🚀 Track Today's Workout</a>
+        <a href="history.html">📖 View Workout History</a>
+        <a href="progress.html">📈 See Your Progress</a>
+        <a href="plan.html">📋 Create / Edit Split</a>
+    </div>
+
+    <div class="content">
+        <div class="section">
+            <label>Split Name</label>
+            <input id="split-name" type="text" value="Upper Body Focus" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
+        </div>
+
+        <div class="section">
+            <label>Days per week</label>
+            <select id="num-days" onchange="renderDays()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
+                <option value="1">1 day</option>
+                <option value="2">2 days</option>
+                <option value="3" selected>3 days</option>
+                <option value="4">4 days</option>
+                <option value="5">5 days</option>
+                <option value="6">6 days</option>
+                <option value="7">7 days</option>
+            </select>
+        </div>
+
+        <div id="days-container"></div>
+
+        <button onclick="saveSplit()" class="add-btn" style="width:100%;">💾 Save This Split</button>
+    </div>
+
+    <script>
+        const bodyPartsList = ["Shoulders","Arms","Chest","Back","Legs"];
+
+        let currentSplit = {
+            name: "Upper Body Focus",
+            days: []
+        };
+
+        function loadSplit() {
+            const saved = localStorage.getItem('customSplit');
+            if (saved) currentSplit = JSON.parse(saved);
+            document.getElementById('split-name').value = currentSplit.name || "Upper Body Focus";
+        }
+
+        function renderDays() {
+            const num = parseInt(document.getElementById('num-days').value);
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
+
+            currentSplit.days = currentSplit.days.slice(0, num); // keep existing if fewer days
+
+            for (let i = 0; i < num; i++) {
+                if (!currentSplit.days[i]) {
+                    currentSplit.days[i] = { bodyParts: [], exercises: [] };
+                }
+                const day = currentSplit.days[i];
+
+                let html = `
+                <div class="day">
+                    <strong>Day ${i+1}</strong>
+                    <div class="body-part-grid">`;
+
+                bodyPartsList.forEach(part => {
+                    const checked = day.bodyParts.includes(part) ? 'checked' : '';
+                    html += `<label><input type="checkbox" ${checked} onchange="toggleBodyPart(${i}, '${part}')"> ${part}</label>`;
+                });
+
+                html += `</div><div id="exercises-${i}"></div>
+                <button onclick="addExercise(${i})" class="add-btn" style="background:#333;color:#fff;">+ Add Exercise</button>
+                </div>`;
+
+                container.innerHTML += html;
+                renderExercises(i);
+            }
+        }
+
+        function toggleBodyPart(dayIndex, part) {
+            const day = currentSplit.days[dayIndex];
+            if (day.bodyParts.includes(part)) {
+                day.bodyParts = day.bodyParts.filter(p => p !== part);
+            } else {
+                day.bodyParts.push(part);
+            }
+        }
+
+        function renderExercises(dayIndex) {
+            const container = document.getElementById(`exercises-${dayIndex}`);
+            const exercises = currentSplit.days[dayIndex].exercises;
+            let html = '';
+            exercises.forEach((ex, idx) => {
+                html += `
+                <div class="exercise-row">
+                    <input type="text" value="${ex.name}" onchange="currentSplit.days[${dayIndex}].exercises[${idx}].name=this.value">
+                    <input type="number" value="${ex.sets}" style="width:80px" onchange="currentSplit.days[${dayIndex}].exercises[${idx}].sets=parseInt(this.value)">
+                    <button onclick="removeExercise(${dayIndex},${idx});renderExercises(${dayIndex});" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function addExercise(dayIndex) {
+            currentSplit.days[dayIndex].exercises.push({ name: "", sets: 3 });
+            renderExercises(dayIndex);
+        }
+
+        function removeExercise(dayIndex, exIndex) {
+            currentSplit.days[dayIndex].exercises.splice(exIndex, 1);
+        }
+
+        function saveSplit() {
+            currentSplit.name = document.getElementById('split-name').value || "Untitled Split";
+            localStorage.setItem('customSplit', JSON.stringify(currentSplit));
+            alert('✅ Split saved! You can now use it in the Track page (coming next).');
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
+        }
+
+        // Load on start
+        window.onload = () => {
+            loadSplit();
+            renderDays();
+        };
+    </script>
+</body>
+</html>
