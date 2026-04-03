@@ -26,6 +26,15 @@
         .stat-card { background:#1c1c1c; padding:20px; margin-bottom:16px; border-radius:16px; }
         .best-item { background:#1c1c1c; padding:18px; margin-bottom:12px; border-radius:16px; display:flex; justify-content:space-between; align-items:center; }
     </style>
+
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
 </head>
 <body>
 
