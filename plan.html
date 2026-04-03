@@ -32,6 +32,15 @@
         .exercise-row input { flex:1; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; padding:10px; }
         button.add-btn { background:var(--accent); color:#111; border:none; padding:12px 20px; border-radius:12px; font-weight:700; margin-top:12px; }
     </style>
+
+    <!-- Register Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
 </head>
 <body>
 
