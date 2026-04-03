@@ -109,7 +109,7 @@
             splitData.days.forEach((day, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
-                btn.textContent = day.name || `Day ${i+1}`;
+                btn.textContent = `Day ${i+1}`;                    // ← SIMPLIFIED
                 btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
                 container.appendChild(btn);
             });
@@ -118,7 +118,7 @@
         function renderWorkout() {
             const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
             const day = splitData.days[currentDayIndex];
-            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;   // ← FULL NAME HERE
 
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
@@ -172,7 +172,6 @@
         }
 
         function startApp() {
-            // Week commencing calendar
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
