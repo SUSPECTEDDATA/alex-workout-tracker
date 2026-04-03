@@ -49,19 +49,14 @@
     </div>
 
     <div class="content">
-        <!-- WEEK COMMENCING -->
         <div class="week-input">
             <span>Week commencing:</span>
             <input type="date" id="week-commencing">
         </div>
 
-        <!-- SPLIT SELECTOR -->
         <div class="split-selector">
             <label style="font-weight:600;">Using Split:</label><br>
-            <select id="split-selector" onchange="changeSplit()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
-                <option value="default">Alex's Plan</option>
-                <option value="custom">Custom Split: Upper Body Focus</option>
-            </select>
+            <select id="split-selector" onchange="changeSplit()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;"></select>
         </div>
 
         <div class="day-buttons" id="day-buttons"></div>
@@ -72,23 +67,20 @@
     </div>
 
     <script>
-        let currentSplit = "default";
+        let currentSplitId = "default";
         let currentDayIndex = 0;
 
-        const defaultPlan = { 
-            name: "Alex's Plan",
-            days: [
-                { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
-                { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Single Arm Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
-                { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
-                { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Cable Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
-                { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",sets:4},{name:"Leg Press (high feet)",sets:3},{name:"Lying Leg Curl",sets:3},{name:"Leg Extension",sets:3},{name:"Seated Calf Raises",sets:3}] }
-            ]
-        };
+        const defaultPlan = { id: "default", name: "Alex's Plan", days: [
+            { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+            { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Single Arm Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+            { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+            { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Cable Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+            { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",sets:4},{name:"Leg Press (high feet)",sets:3},{name:"Lying Leg Curl",sets:3},{name:"Leg Extension",sets:3},{name:"Seated Calf Raises",sets:3}] }
+        ]};
 
-        function loadCustomSplit() {
-            const saved = localStorage.getItem('customSplit');
-            return saved ? JSON.parse(saved) : null;
+        function loadAllSplits() {
+            let splits = JSON.parse(localStorage.getItem('customSplits') || '[]');
+            return [defaultPlan, ...splits];
         }
 
         function getMonday(dateStr) {
@@ -100,25 +92,38 @@
             return d.toISOString().split('T')[0];
         }
 
+        function renderSplitSelector() {
+            const select = document.getElementById('split-selector');
+            select.innerHTML = '';
+            const allSplits = loadAllSplits();
+            allSplits.forEach(split => {
+                const option = document.createElement('option');
+                option.value = split.id;
+                option.textContent = split.name;
+                if (split.id === currentSplitId) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
         function renderDayButtons() {
             const container = document.getElementById('day-buttons');
             container.innerHTML = '';
-            let splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit();
-            if (!splitData) splitData = defaultPlan;
-
-            splitData.days.forEach((day, i) => {
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            split.days.forEach((day, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
-                btn.textContent = `Day ${i+1}`;                    // ← SIMPLIFIED
+                btn.textContent = `Day ${i+1}`;
                 btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
                 container.appendChild(btn);
             });
         }
 
         function renderWorkout() {
-            const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
-            const day = splitData.days[currentDayIndex];
-            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;   // ← FULL NAME HERE
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            const day = split.days[currentDayIndex];
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
 
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
@@ -134,7 +139,7 @@
         }
 
         function changeSplit() {
-            currentSplit = document.getElementById('split-selector').value;
+            currentSplitId = document.getElementById('split-selector').value;
             currentDayIndex = 0;
             renderDayButtons();
             renderWorkout();
@@ -146,8 +151,9 @@
         }
 
         function saveWorkout() {
-            const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
-            const day = splitData.days[currentDayIndex];
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            const day = split.days[currentDayIndex];
             const log = [];
             const exercises = document.querySelectorAll('.exercise');
             exercises.forEach((exDiv, exIndex) => {
@@ -178,10 +184,9 @@
             document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
 
             const weekInput = document.getElementById('week-commencing');
-            weekInput.addEventListener('change', () => {
-                weekInput.value = getMonday(weekInput.value);
-            });
+            weekInput.addEventListener('change', () => { weekInput.value = getMonday(weekInput.value); });
 
+            renderSplitSelector();
             renderDayButtons();
             renderWorkout();
         }
