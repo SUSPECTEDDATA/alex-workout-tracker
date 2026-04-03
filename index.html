@@ -7,34 +7,143 @@
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0; padding: 0; background: #0f0f0f; color: #fff;
-            max-width: 600px; margin: 0 auto; min-height: 100vh;
-        }
-        header {
-            background: #181818; padding: 20px 16px; border-bottom: 3px solid var(--accent);
-            display: flex; align-items: center; justify-content: flex-start;
-        }
-        h1 { margin: 0; font-size: 26px; font-weight: 700; }
-        .content { padding: 40px 16px; text-align: center; }
-        .big-btn {
-            background: var(--accent); color: #111; border: none; padding: 24px; font-size: 22px; font-weight: 700;
-            border-radius: 16px; width: 100%; margin-bottom: 20px; text-decoration: none; display: block;
-        }
-        .big-btn:active { transform: scale(0.95); }
-        .big-btn.secondary { background:#222; color:#fff; }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; padding:0; background:#0f0f0f; color:#fff; max-width:600px; margin:0 auto; min-height:100vh; }
+        header { background:#181818; padding:20px 16px; border-bottom:3px solid var(--accent); display:flex; align-items:center; justify-content:space-between; }
+        h1 { margin:0; font-size:24px; font-weight:700; }
+        .hamburger { font-size:28px; background:none; border:none; color:#fff; cursor:pointer; padding:8px; }
+        .menu { display:none; position:absolute; top:68px; right:16px; background:#181818; border-radius:16px; padding:12px 0; box-shadow:0 10px 20px rgba(0,0,0,0.5); width:280px; z-index:1000; }
+        .menu.show { display:block; }
+        .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
+        .menu a:hover { background:#222; }
+        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
+        .week-input input[type="date"] { flex:1; padding:14px 16px; background:#222; border:2px solid #333; color:#fff; border-radius:12px; font-size:17px; }
+        .day-buttons { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; background:#181818; }
+        .day-btn { flex:1; min-width:68px; padding:14px 8px; background:#222; border:none; color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
+        .day-btn.active { background:var(--accent); color:#111; transform:scale(1.05); }
+        .content { padding:16px; padding-bottom:80px; }
+        .day-header { font-size:24px; font-weight:700; margin:8px 0 18px; }
+        .exercise { background:#1c1c1c; margin-bottom:22px; border-radius:16px; overflow:hidden; }
+        .exercise-name { padding:18px 20px 14px; font-size:20px; font-weight:700; }
+        table { width:100%; border-collapse:collapse; }
+        th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
+        td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
+        input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
+        input[type="number"].provisional { color:#888; font-style:italic; }
+        input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
+        .trend { font-size:20px; font-weight:bold; width:24px; }
+        button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
     </style>
 </head>
 <body>
 
-    <header><h1>Alex's Workout Tracker</h1></header>
+    <header>
+        <h1>🚀 Track Workout</h1>
+        <button onclick="toggleMenu()" class="hamburger">☰</button>
+    </header>
 
-    <div class="content">
-        <a href="track.html" class="big-btn">🚀 Track Today's Workout</a>
-        <a href="history.html" class="big-btn secondary">📖 View Workout History</a>
-        <a href="progress.html" class="big-btn secondary">📈 See Your Progress</a>
+    <div id="menu" class="menu">
+        <a href="index.html">🚀 Track Today's Workout</a>
+        <a href="history.html">📖 View Workout History</a>
+        <a href="progress.html">📈 See Your Progress</a>
     </div>
 
+    <div class="content">
+        <div class="week-input">
+            <span>Week commencing:</span>
+            <input type="date" id="week-commencing">
+        </div>
+
+        <div class="day-buttons">
+            <button class="day-btn active" onclick="selectDay(1,this)">Day 1</button>
+            <button class="day-btn" onclick="selectDay(2,this)">Day 2</button>
+            <button class="day-btn" onclick="selectDay(3,this)">Day 3</button>
+            <button class="day-btn" onclick="selectDay(4,this)">Day 4</button>
+            <button class="day-btn" onclick="selectDay(5,this)">Day 5</button>
+        </div>
+
+        <h2 id="current-day-title" class="day-header">Day 1 – Chest + Back</h2>
+        <div id="exercises-list"></div>
+        <button onclick="saveWorkout()" class="save-btn">Save &amp; Finish Workout</button>
+    </div>
+
+    <script>
+        const workoutPlan = {
+            1: { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",initialSets:4,reps:"8-10"},{name:"Bent-Over Barbell Row",initialSets:4,reps:"8-10"},{name:"Seated Chest Press Machine",initialSets:4,reps:"10-12"},{name:"Wide-Grip Lat Pulldown",initialSets:4,reps:"8-12"},{name:"Cable Flyes",initialSets:3,reps:"12-15"},{name:"Close-Grip Lat Pulldown",initialSets:3,reps:"10-12"}]},
+            2: { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",initialSets:4,reps:"8-10"},{name:"Dumbbell Lateral Raises",initialSets:4,reps:"10-12"},{name:"Rear Delt Flyes",initialSets:3,reps:"12-15"},{name:"Single Arm Tricep Pushdown",initialSets:4,reps:"12-15"},{name:"Overhead Dumbbell Tricep Extension",initialSets:3,reps:"10-12"},{name:"Alternating Dumbbell Curl",initialSets:4,reps:"8-10"},{name:"Preacher Curl",initialSets:3,reps:"10-12"},{name:"Reverse Preacher Curl",initialSets:3,reps:"10-12"}]},
+            3: { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",initialSets:4,reps:"8-10"},{name:"Bent-Over Barbell Row",initialSets:4,reps:"8-10"},{name:"Seated Chest Press Machine",initialSets:4,reps:"10-12"},{name:"Wide-Grip Lat Pulldown",initialSets:4,reps:"8-12"},{name:"Cable Flyes",initialSets:3,reps:"12-15"},{name:"Close-Grip Lat Pulldown",initialSets:3,reps:"10-12"}]},
+            4: { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",initialSets:4,reps:"8-10"},{name:"Dumbbell Lateral Raises",initialSets:4,reps:"10-12"},{name:"Rear Delt Flyes",initialSets:3,reps:"12-15"},{name:"Cable Tricep Pushdown",initialSets:4,reps:"12-15"},{name:"Overhead Dumbbell Tricep Extension",initialSets:3,reps:"10-12"},{name:"Alternating Dumbbell Curl",initialSets:4,reps:"8-10"},{name:"Preacher Curl",initialSets:3,reps:"10-12"},{name:"Reverse Preacher Curl",initialSets:3,reps:"10-12"}]},
+            5: { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",initialSets:4,reps:"8-10"},{name:"Leg Press (high feet)",initialSets:3,reps:"10-12"},{name:"Lying Leg Curl",initialSets:3,reps:"10-12"},{name:"Leg Extension",initialSets:3,reps:"12-15"},{name:"Seated Calf Raises",initialSets:3,reps:"12-15"}]}
+        };
+
+        let currentDay = 1;
+        let unsavedDrafts = {};
+
+        function saveToStorage(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+        function loadFromStorage(key) { const d=localStorage.getItem(key); return d?JSON.parse(d):{}; }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
+        }
+
+        function renderWorkout() {
+            const plan = workoutPlan[currentDay];
+            document.getElementById('current-day-title').textContent = plan.name;
+            const container = document.getElementById('exercises-list');
+            container.innerHTML = '';
+            let html = '';
+            plan.exercises.forEach(ex => {
+                html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
+                for(let i=0; i<ex.initialSets; i++){
+                    html += `<tr><td>${i+1}</td><td><input type="number" class="weight-input" value=""></td><td><input type="number" class="reps-input" value=""></td><td><input type="checkbox" class="done-checkbox"></td><td class="trend"></td></tr>`;
+                }
+                html += `</table></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function selectDay(day, btn) {
+            currentDay = day;
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderWorkout();
+        }
+
+        function saveWorkout() {
+            // (full save logic – works exactly as before)
+            const plan = workoutPlan[currentDay];
+            const log = [];
+            const exercises = document.querySelectorAll('.exercise');
+            exercises.forEach((exDiv, exIndex) => {
+                const sets = [];
+                const rows = exDiv.querySelectorAll('tr');
+                rows.forEach((row, setIndex) => {
+                    if (setIndex === 0) return;
+                    const weight = row.querySelector('.weight-input').value;
+                    const reps = row.querySelector('.reps-input').value;
+                    const completed = row.querySelector('.done-checkbox').checked;
+                    sets.push({ weight, reps, completed });
+                });
+                log.push({ name: plan.exercises[exIndex].name, sets });
+            });
+            const weekCommencing = document.getElementById('week-commencing').value;
+            const history = loadFromStorage('workoutHistory') || [];
+            const entry = { date: new Date().toISOString(), day: currentDay, dayName: plan.name, weekCommencing, log };
+            history.unshift(entry);
+            saveToStorage('workoutHistory', history);
+            alert('Workout saved! ✅');
+            window.location.href = 'history.html';
+        }
+
+        function startApp() {
+            const today = new Date();
+            let monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+            document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
+            renderWorkout();
+        }
+
+        window.onload = startApp;
+    </script>
 </body>
 </html>
