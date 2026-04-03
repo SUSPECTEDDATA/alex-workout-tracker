@@ -99,14 +99,11 @@
             let maxVolume = 0;
             history.forEach(entry => {
                 const ex = entry.log.find(e => e.name === exerciseName);
-                if (ex) {
-                    ex.sets.forEach(set => {
-                        const w = parseFloat(set.weight) || 0;
-                        const r = parseFloat(set.reps) || 0;
-                        const volume = w * r;
-                        if (volume > maxVolume) maxVolume = volume;
-                    });
-                }
+                if (ex) ex.sets.forEach(set => {
+                    const w = parseFloat(set.weight) || 0;
+                    const r = parseFloat(set.reps) || 0;
+                    if (w * r > maxVolume) maxVolume = w * r;
+                });
             });
             return maxVolume;
         }
@@ -138,6 +135,27 @@
             });
         }
 
+        function updateArrows() {
+            const exercises = document.querySelectorAll('.exercise');
+            exercises.forEach(exercise => {
+                const name = exercise.querySelector('.exercise-name').textContent;
+                const historicalMax = getHistoricalMaxForExercise(name);
+                const rows = exercise.querySelectorAll('tr');
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const w = parseFloat(row.querySelector('.weight-input').value) || 0;
+                    const r = parseFloat(row.querySelector('.reps-input').value) || 0;
+                    const volume = w * r;
+                    let arrow = '';
+                    if (volume > 0) {
+                        if (volume > historicalMax) arrow = `<span style="color:#00ff9d">▲</span>`;
+                        else if (historicalMax > 0 && volume < historicalMax) arrow = `<span style="color:#ff6666">▼</span>`;
+                    }
+                    row.querySelector('.trend').innerHTML = arrow;
+                }
+            });
+        }
+
         function renderWorkout(preFillLog = null) {
             const allSplits = loadAllSplits();
             const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
@@ -152,18 +170,20 @@
 
             if (!useLog) {
                 const week = document.getElementById('week-commencing').value;
-                const existing = JSON.parse(localStorage.getItem('workoutHistory') || '[]').find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
+                const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+                const existing = history.find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
                 if (existing) useLog = existing.log;
                 else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) useLog = unsavedDrafts[week][currentDayIndex];
                 else {
-                    const lastSession = JSON.parse(localStorage.getItem('workoutHistory') || '[]').sort((a,b) => new Date(b.date) - new Date(a.date)).find(e => e.day === currentDayIndex + 1);
-                    if (lastSession) {
-                        useLog = lastSession.log.map(ex => ({ ...ex, sets: ex.sets.map(s => ({...s, completed: false})) }));
+                    const sorted = [...history].sort((a,b) => new Date(b.date)-new Date(a.date));
+                    const last = sorted.find(e => e.day === currentDayIndex + 1);
+                    if (last) {
+                        useLog = last.log.map(ex => ({...ex, sets: ex.sets.map(s => ({...s, completed:false}))}));
                         isProvisional = true;
                     } else {
                         useLog = day.exercises.map(ex => ({
                             name: ex.name,
-                            sets: Array(ex.sets || 4).fill().map(() => ({ weight: '', reps: '', completed: false }))
+                            sets: Array(ex.sets || 4).fill().map(() => ({weight:'', reps:'', completed:false}))
                         }));
                     }
                 }
@@ -172,44 +192,31 @@
             let html = '';
             day.exercises.forEach((ex, exIndex) => {
                 const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
-                const historicalMax = getHistoricalMaxForExercise(ex.name);
-
                 html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
-
                 currentSets.forEach((setData, setIndex) => {
                     const provisionalClass = (isProvisional && (setData.weight || setData.reps)) ? 'provisional' : '';
-                    const w = parseFloat(setData.weight) || 0;
-                    const r = parseFloat(setData.reps) || 0;
-                    const currentVolume = w * r;
-
-                    let arrow = '';
-                    if (currentVolume > 0) {
-                        if (currentVolume > historicalMax) arrow = `<span style="color:#00ff9d">▲</span>`;
-                        else if (historicalMax > 0 && currentVolume < historicalMax) arrow = `<span style="color:#ff6666">▼</span>`;
-                    }
-
                     html += `<tr>
                         <td>${setIndex + 1}</td>
                         <td><input type="number" value="${setData.weight}" class="weight-input ${provisionalClass}"></td>
                         <td><input type="number" value="${setData.reps}" class="reps-input ${provisionalClass}"></td>
                         <td><input type="checkbox" class="done-checkbox" ${setData.completed ? 'checked' : ''}></td>
-                        <td class="trend">${arrow}</td>
+                        <td class="trend"></td>
                     </tr>`;
                 });
                 html += `</table></div>`;
             });
             container.innerHTML = html;
 
-            // Auto-copy from first set + live arrow update
-            const exercises = container.querySelectorAll('.exercise');
-            exercises.forEach(exercise => {
+            // Auto-copy from first set (only if not provisional)
+            const exercisesDivs = container.querySelectorAll('.exercise');
+            exercisesDivs.forEach(exercise => {
                 const rows = exercise.querySelectorAll('tr');
                 if (rows.length < 2) return;
 
                 const firstWeight = rows[1].querySelector('.weight-input');
                 const firstReps = rows[1].querySelector('.reps-input');
 
-                const copyAndUpdate = () => {
+                const copyFromFirst = () => {
                     if (firstWeight && firstWeight.value) {
                         for (let i = 2; i < rows.length; i++) {
                             const target = rows[i].querySelector('.weight-input');
@@ -222,22 +229,24 @@
                             if (target && !target.classList.contains('provisional')) target.value = firstReps.value;
                         }
                     }
-                    renderWorkout();   // refresh arrows
+                    updateArrows();
                 };
 
-                if (firstWeight) firstWeight.addEventListener('change', copyAndUpdate);
-                if (firstReps) firstReps.addEventListener('change', copyAndUpdate);
+                if (firstWeight) firstWeight.addEventListener('input', copyFromFirst);
+                if (firstReps) firstReps.addEventListener('input', copyFromFirst);
             });
 
-            // General change listener
-            const allInputs = container.querySelectorAll('input.weight-input, input.reps-input, input.done-checkbox');
+            // General live update for arrows + unsaved data
+            const allInputs = container.querySelectorAll('input');
             allInputs.forEach(input => {
-                input.addEventListener('change', () => {
+                input.addEventListener('input', () => {
                     if (input.classList.contains('provisional')) input.classList.remove('provisional');
                     captureUnsavedData();
-                    renderWorkout();   // live arrows
+                    updateArrows();
                 });
             });
+
+            updateArrows(); // initial arrows
         }
 
         function captureUnsavedData() {
@@ -250,9 +259,9 @@
                 const rows = exDiv.querySelectorAll('tr');
                 rows.forEach((row, setIndex) => {
                     if (setIndex === 0) return;
-                    const weight = row.querySelector('.weight-input') ? row.querySelector('.weight-input').value : '';
-                    const reps = row.querySelector('.reps-input') ? row.querySelector('.reps-input').value : '';
-                    const completed = row.querySelector('.done-checkbox') ? row.querySelector('.done-checkbox').checked : false;
+                    const weight = row.querySelector('.weight-input').value;
+                    const reps = row.querySelector('.reps-input').value;
+                    const completed = row.querySelector('.done-checkbox').checked;
                     sets.push({ weight, reps, completed });
                 });
                 log.push({ sets });
