@@ -27,30 +27,25 @@
     </style>
 </head>
 <body>
-
     <header>
         <h1>My Splits</h1>
         <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
-
     <div id="menu" class="menu">
         <a href="index.html">Track Today's Workout</a>
         <a href="history.html">View Workout History</a>
         <a href="progress.html">See Your Progress</a>
         <a href="plan.html">Create / Edit Split</a>
     </div>
-
     <div class="content">
         <div id="split-list"></div>
         <button onclick="createNewSplit()" class="add-btn" style="width:100%;">Create New Split</button>
     </div>
-
     <div id="edit-form" style="display:none;">
         <div class="section">
             <label>Split Name</label>
             <input id="split-name" type="text" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
         </div>
-
         <div class="section">
             <label>Days per week</label>
             <select id="num-days" onchange="renderEditDays()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
@@ -58,24 +53,19 @@
                 <option value="4">4 days</option><option value="5">5 days</option><option value="6">6 days</option><option value="7">7 days</option>
             </select>
         </div>
-
         <div id="edit-days-container"></div>
-
         <button onclick="saveCurrentSplit()" class="add-btn" style="width:100%;margin-top:20px;">Save Split</button>
         <button onclick="cancelEdit()" style="background:#333;color:#fff;width:100%;padding:14px;border-radius:12px;margin-top:8px;">Cancel</button>
     </div>
-
     <script>
         let customSplits = [];
         let currentEditingId = null;
-        const bodyPartsList = ["Shoulders","Arms","Chest","Back","Legs"];
-
+        const bodyPartsList = ["Shoulders","Biceps","Triceps","Chest","Back","Legs","Core"];
         function loadSplits() {
             const saved = localStorage.getItem('customSplits');
             if (saved) customSplits = JSON.parse(saved);
             renderSplitList();
         }
-
         function renderSplitList() {
             const container = document.getElementById('split-list');
             if (customSplits.length === 0) {
@@ -98,7 +88,6 @@
             });
             container.innerHTML = html;
         }
-
         function createNewSplit() {
             currentEditingId = null;
             document.getElementById('edit-form').style.display = 'block';
@@ -107,7 +96,6 @@
             document.getElementById('num-days').value = "3";
             renderEditDays();
         }
-
         function editSplit(id) {
             currentEditingId = id;
             const split = customSplits.find(s => s.id === id);
@@ -118,20 +106,16 @@
             document.getElementById('num-days').value = split.days.length;
             renderEditDays(split);
         }
-
         function cancelEdit() {
             document.getElementById('edit-form').style.display = 'none';
             document.getElementById('split-list').style.display = 'block';
             currentEditingId = null;
         }
-
         function renderEditDays(preloadSplit = null) {
             const num = parseInt(document.getElementById('num-days').value);
             const container = document.getElementById('edit-days-container');
             container.innerHTML = '';
-
             const days = preloadSplit ? preloadSplit.days : Array(num).fill().map(() => ({ bodyParts: [], exercises: [] }));
-
             for (let i = 0; i < num; i++) {
                 const day = days[i] || { bodyParts: [], exercises: [] };
                 let html = `<div class="day"><strong>Day ${i+1}</strong><div class="body-part-grid">`;
@@ -144,11 +128,9 @@
                 renderEditExercises(i, day.exercises);
             }
         }
-
         function toggleBodyPartInEdit(dayIndex, part) {
             // handled on save
         }
-
         function renderEditExercises(dayIndex, exercises) {
             const container = document.getElementById(`edit-exercises-${dayIndex}`);
             let html = '';
@@ -157,7 +139,6 @@
             });
             container.innerHTML = html;
         }
-
         function addExerciseInEdit(dayIndex) {
             const container = document.getElementById(`edit-exercises-${dayIndex}`);
             const row = document.createElement('div');
@@ -165,21 +146,18 @@
             row.innerHTML = `<input type="text" placeholder="Exercise name"><input type="number" value="3" style="width:80px"><button onclick="this.closest('.exercise-row').remove()" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button>`;
             container.appendChild(row);
         }
-
         function saveCurrentSplit() {
             const name = document.getElementById('split-name').value.trim() || "Untitled Split";
             const numDays = parseInt(document.getElementById('num-days').value);
             const days = [];
-
             const dayDivs = document.querySelectorAll('.day');
             for (let i = 0; i < numDays; i++) {
                 const dayDiv = dayDivs[i];
                 const checkedBoxes = dayDiv.querySelectorAll('input[type="checkbox"]:checked');
                 const bodyParts = Array.from(checkedBoxes).map(cb => cb.nextSibling.textContent.trim());
-                
+               
                 let dayName = `Day ${i+1}`;
                 if (bodyParts.length > 0) dayName += ` – ${bodyParts.join(' + ')}`;
-
                 const exercises = [];
                 dayDiv.querySelectorAll('.exercise-row').forEach(row => {
                     const inputs = row.querySelectorAll('input');
@@ -189,10 +167,8 @@
                         if (exName) exercises.push({ name: exName, sets });
                     }
                 });
-
                 days.push({ name: dayName, bodyParts, exercises });
             }
-
             if (currentEditingId) {
                 const split = customSplits.find(s => s.id === currentEditingId);
                 if (split) {
@@ -202,25 +178,21 @@
             } else {
                 customSplits.push({ id: 'split-' + Date.now(), name, days });
             }
-
             localStorage.setItem('customSplits', JSON.stringify(customSplits));
             alert('Split saved');
             cancelEdit();
             loadSplits();
         }
-
         function deleteSplit(id) {
             if (!confirm('Delete this split permanently?')) return;
             customSplits = customSplits.filter(s => s.id !== id);
             localStorage.setItem('customSplits', JSON.stringify(customSplits));
             loadSplits();
         }
-
         function toggleMenu() {
             const menu = document.getElementById('menu');
             menu.classList.toggle('show');
         }
-
         window.onload = loadSplits;
     </script>
 </body>
