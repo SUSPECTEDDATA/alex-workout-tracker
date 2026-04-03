@@ -45,7 +45,6 @@
         <button onclick="createNewSplit()" class="add-btn" style="width:100%;">+ Create New Split</button>
     </div>
 
-    <!-- EDIT / CREATE FORM (hidden by default) -->
     <div id="edit-form" style="display:none;">
         <div class="section">
             <label>Split Name</label>
@@ -74,12 +73,6 @@
         function loadSplits() {
             const saved = localStorage.getItem('customSplits');
             if (saved) customSplits = JSON.parse(saved);
-            // Migrate old single split if it exists
-            else if (localStorage.getItem('customSplit')) {
-                const old = JSON.parse(localStorage.getItem('customSplit'));
-                customSplits = [{ id: 'split-' + Date.now(), name: old.name || 'Upper Body Focus', days: old.days || [] }];
-                localStorage.removeItem('customSplit');
-            }
             renderSplitList();
         }
 
@@ -137,10 +130,10 @@
             const container = document.getElementById('edit-days-container');
             container.innerHTML = '';
 
-            const days = preloadSplit ? preloadSplit.days : Array(num).fill().map(() => ({ name: '', bodyParts: [], exercises: [] }));
+            const days = preloadSplit ? preloadSplit.days : Array(num).fill().map(() => ({ bodyParts: [], exercises: [] }));
 
             for (let i = 0; i < num; i++) {
-                const day = days[i] || { name: '', bodyParts: [], exercises: [] };
+                const day = days[i] || { bodyParts: [], exercises: [] };
                 let html = `<div class="day"><strong>Day ${i+1}</strong><div class="body-part-grid">`;
                 bodyPartsList.forEach(part => {
                     const checked = day.bodyParts.includes(part) ? 'checked' : '';
@@ -153,14 +146,14 @@
         }
 
         function toggleBodyPartInEdit(dayIndex, part) {
-            // Handled in the global scope – we’ll read the checkboxes when saving
+            // handled on save
         }
 
         function renderEditExercises(dayIndex, exercises) {
             const container = document.getElementById(`edit-exercises-${dayIndex}`);
             let html = '';
             exercises.forEach((ex, idx) => {
-                html += `<div class="exercise-row"><input type="text" value="${ex.name}" onchange="this.closest('.exercise-row').dataset.name=this.value"><input type="number" value="${ex.sets}" style="width:80px" onchange="this.closest('.exercise-row').dataset.sets=this.value"><button onclick="this.closest('.exercise-row').remove()" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button></div>`;
+                html += `<div class="exercise-row"><input type="text" value="${ex.name}"><input type="number" value="${ex.sets}" style="width:80px"><button onclick="this.closest('.exercise-row').remove()" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button></div>`;
             });
             container.innerHTML = html;
         }
@@ -178,9 +171,18 @@
             const numDays = parseInt(document.getElementById('num-days').value);
             const days = [];
 
+            const dayDivs = document.querySelectorAll('.day');
             for (let i = 0; i < numDays; i++) {
-                const dayDiv = document.querySelectorAll('.day')[i];
-                const bodyParts = Array.from(dayDiv.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.nextSibling.textContent.trim());
+                const dayDiv = dayDivs[i];
+                const checkedBoxes = dayDiv.querySelectorAll('input[type="checkbox"]:checked');
+                const bodyParts = Array.from(checkedBoxes).map(cb => cb.nextSibling.textContent.trim());
+                
+                // Build nice name with body parts
+                let dayName = `Day ${i+1}`;
+                if (bodyParts.length > 0) {
+                    dayName += ` – ${bodyParts.join(' + ')}`;
+                }
+
                 const exercises = [];
                 dayDiv.querySelectorAll('.exercise-row').forEach(row => {
                     const inputs = row.querySelectorAll('input');
@@ -190,7 +192,8 @@
                         if (exName) exercises.push({ name: exName, sets });
                     }
                 });
-                days.push({ name: `Day ${i+1}`, bodyParts, exercises });
+
+                days.push({ name: dayName, bodyParts, exercises });
             }
 
             if (currentEditingId) {
@@ -204,7 +207,7 @@
             }
 
             localStorage.setItem('customSplits', JSON.stringify(customSplits));
-            alert('✅ Split saved!');
+            alert('✅ Split saved with full day names!');
             cancelEdit();
             loadSplits();
         }
