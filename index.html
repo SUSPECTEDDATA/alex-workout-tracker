@@ -114,7 +114,7 @@
             split.days.forEach((day, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
-                btn.textContent = day.name;                    // ← FULL NAME FOR CUSTOM SPLITS
+                btn.textContent = `Day ${i+1}`;               // ← CLEAN BUTTONS ONLY
                 btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
                 container.appendChild(btn);
             });
@@ -124,7 +124,7 @@
             const allSplits = loadAllSplits();
             const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
             const day = split.days[currentDayIndex];
-            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;   // ← FULL NAME WITH BODY PARTS
 
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
