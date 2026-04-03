@@ -319,7 +319,10 @@
             document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
 
             const weekInput = document.getElementById('week-commencing');
-            weekInput.addEventListener('change', () => { weekInput.value = getMonday(weekInput.value); });
+            weekInput.addEventListener('change', () => {
+                weekInput.value = getMonday(weekInput.value);
+                renderWorkout();          // ← THIS WAS MISSING – NOW FIXED
+            });
 
             const params = new URLSearchParams(window.location.search);
             const pastIndex = params.get('pastIndex');
