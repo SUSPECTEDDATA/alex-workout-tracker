@@ -94,15 +94,21 @@
             return d.toISOString().split('T')[0];
         }
 
-        function getExistingWorkout(weekCommencing, dayIndex) {
+        function getHistoricalMaxForExercise(exerciseName) {
             const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
-            return history.find(entry => entry.weekCommencing === weekCommencing && entry.day === dayIndex + 1);
-        }
-
-        function getLastSessionForDay(dayIndex) {
-            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
-            const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
-            return sorted.find(entry => entry.day === dayIndex + 1);
+            let maxVolume = 0;
+            history.forEach(entry => {
+                const ex = entry.log.find(e => e.name === exerciseName);
+                if (ex) {
+                    ex.sets.forEach(set => {
+                        const w = parseFloat(set.weight) || 0;
+                        const r = parseFloat(set.reps) || 0;
+                        const volume = w * r;
+                        if (volume > maxVolume) maxVolume = volume;
+                    });
+                }
+            });
+            return maxVolume;
         }
 
         function renderSplitSelector() {
@@ -146,16 +152,13 @@
 
             if (!useLog) {
                 const week = document.getElementById('week-commencing').value;
-                const existing = getExistingWorkout(week, currentDayIndex);
+                const existing = JSON.parse(localStorage.getItem('workoutHistory') || '[]').find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
                 if (existing) useLog = existing.log;
                 else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) useLog = unsavedDrafts[week][currentDayIndex];
                 else {
-                    const lastSession = getLastSessionForDay(currentDayIndex);
+                    const lastSession = JSON.parse(localStorage.getItem('workoutHistory') || '[]').sort((a,b) => new Date(b.date) - new Date(a.date)).find(e => e.day === currentDayIndex + 1);
                     if (lastSession) {
-                        useLog = lastSession.log.map(ex => ({
-                            ...ex,
-                            sets: ex.sets.map(set => ({ ...set, completed: false }))
-                        }));
+                        useLog = lastSession.log.map(ex => ({ ...ex, sets: ex.sets.map(s => ({...s, completed: false})) }));
                         isProvisional = true;
                     } else {
                         useLog = day.exercises.map(ex => ({
@@ -169,53 +172,70 @@
             let html = '';
             day.exercises.forEach((ex, exIndex) => {
                 const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
+                const historicalMax = getHistoricalMaxForExercise(ex.name);
+
                 html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
 
                 currentSets.forEach((setData, setIndex) => {
                     const provisionalClass = (isProvisional && (setData.weight || setData.reps)) ? 'provisional' : '';
+                    const w = parseFloat(setData.weight) || 0;
+                    const r = parseFloat(setData.reps) || 0;
+                    const currentVolume = w * r;
+
+                    let arrow = '';
+                    if (currentVolume > 0) {
+                        if (currentVolume > historicalMax) arrow = `<span style="color:#00ff9d">▲</span>`;
+                        else if (historicalMax > 0 && currentVolume < historicalMax) arrow = `<span style="color:#ff6666">▼</span>`;
+                    }
+
                     html += `<tr>
                         <td>${setIndex + 1}</td>
                         <td><input type="number" value="${setData.weight}" class="weight-input ${provisionalClass}"></td>
                         <td><input type="number" value="${setData.reps}" class="reps-input ${provisionalClass}"></td>
                         <td><input type="checkbox" class="done-checkbox" ${setData.completed ? 'checked' : ''}></td>
-                        <td class="trend"></td>
+                        <td class="trend">${arrow}</td>
                     </tr>`;
                 });
                 html += `</table></div>`;
             });
             container.innerHTML = html;
 
-            // Auto-copy from first set to other non-provisional sets
+            // Auto-copy from first set + live arrow update
             const exercises = container.querySelectorAll('.exercise');
             exercises.forEach(exercise => {
                 const rows = exercise.querySelectorAll('tr');
                 if (rows.length < 2) return;
 
-                // First set (index 1 because row 0 is the header)
-                const firstWeightInput = rows[1].querySelector('.weight-input');
-                const firstRepsInput = rows[1].querySelector('.reps-input');
+                const firstWeight = rows[1].querySelector('.weight-input');
+                const firstReps = rows[1].querySelector('.reps-input');
 
-                const copyValue = (input, type) => {
-                    if (!input.value) return;
-                    for (let i = 2; i < rows.length; i++) {
-                        const targetInput = rows[i].querySelector(`.${type}-input`);
-                        if (targetInput && !targetInput.classList.contains('provisional')) {
-                            targetInput.value = input.value;
+                const copyAndUpdate = () => {
+                    if (firstWeight && firstWeight.value) {
+                        for (let i = 2; i < rows.length; i++) {
+                            const target = rows[i].querySelector('.weight-input');
+                            if (target && !target.classList.contains('provisional')) target.value = firstWeight.value;
                         }
                     }
-                    captureUnsavedData();
+                    if (firstReps && firstReps.value) {
+                        for (let i = 2; i < rows.length; i++) {
+                            const target = rows[i].querySelector('.reps-input');
+                            if (target && !target.classList.contains('provisional')) target.value = firstReps.value;
+                        }
+                    }
+                    renderWorkout();   // refresh arrows
                 };
 
-                if (firstWeightInput) firstWeightInput.addEventListener('change', () => copyValue(firstWeightInput, 'weight'));
-                if (firstRepsInput) firstRepsInput.addEventListener('change', () => copyValue(firstRepsInput, 'reps'));
+                if (firstWeight) firstWeight.addEventListener('change', copyAndUpdate);
+                if (firstReps) firstReps.addEventListener('change', copyAndUpdate);
             });
 
-            // General change listeners
+            // General change listener
             const allInputs = container.querySelectorAll('input.weight-input, input.reps-input, input.done-checkbox');
             allInputs.forEach(input => {
                 input.addEventListener('change', () => {
                     if (input.classList.contains('provisional')) input.classList.remove('provisional');
                     captureUnsavedData();
+                    renderWorkout();   // live arrows
                 });
             });
         }
@@ -225,7 +245,7 @@
             if (!week) return;
             const log = [];
             const exercises = document.querySelectorAll('.exercise');
-            exercises.forEach((exDiv, exIndex) => {
+            exercises.forEach(exDiv => {
                 const sets = [];
                 const rows = exDiv.querySelectorAll('tr');
                 rows.forEach((row, setIndex) => {
