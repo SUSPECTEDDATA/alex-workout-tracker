@@ -4,18 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Track - Alex's Workout Tracker</title>
+    
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#00ff9d">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; padding:0; background:#0f0f0f; color:#fff; max-width:600px; margin:0 auto; min-height:100vh; }
-        /* ... your existing styles stay exactly the same ... */
+        header { background:#181818; padding:20px 16px; border-bottom:3px solid var(--accent); display:flex; align-items:center; justify-content:space-between; }
+        h1 { margin:0; font-size:24px; font-weight:700; }
+        .hamburger { font-size:28px; background:none; border:none; color:#fff; cursor:pointer; padding:8px; }
+        .menu { display:none; position:absolute; top:68px; right:16px; background:#181818; border-radius:16px; padding:12px 0; box-shadow:0 10px 20px rgba(0,0,0,0.5); width:280px; z-index:1000; }
+        .menu.show { display:block; }
+        .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
+        .menu a:hover { background:#222; }
+        .content { padding:16px; padding-bottom:80px; }
+        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
+        .week-input input[type="date"] { flex:1; padding:14px 16px; background:#222; border:2px solid #333; color:#fff; border-radius:12px; font-size:17px; }
+        .split-selector { padding:12px 16px; background:#181818; border-radius:12px; margin-bottom:16px; }
+        .day-buttons { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; background:#181818; }
+        .day-btn { flex:1; min-width:68px; padding:14px 8px; background:#222; border:none; color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
+        .day-btn.active { background:var(--accent); color:#111; transform:scale(1.05); }
+        .day-header { font-size:24px; font-weight:700; margin:8px 0 18px; }
+        .exercise { background:#1c1c1c; margin-bottom:22px; border-radius:16px; overflow:hidden; }
+        .exercise-name { padding:18px 20px 14px; font-size:20px; font-weight:700; }
+        table { width:100%; border-collapse:collapse; }
+        th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
+        td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
+        input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
+        input[type="number"].provisional { color:#888; font-style:italic; }
+        input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
+        .trend { font-size:20px; font-weight:bold; width:24px; }
+        button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
     </style>
 </head>
-<body>
 
     <header>
         <h1>Track Workout</h1>
