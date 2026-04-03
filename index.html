@@ -38,15 +38,15 @@
 <body>
 
     <header>
-        <h1>🚀 Track Workout</h1>
+        <h1>Track Workout</h1>
         <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
 
     <div id="menu" class="menu">
-        <a href="index.html">🚀 Track Today's Workout</a>
-        <a href="history.html">📖 View Workout History</a>
-        <a href="progress.html">📈 See Your Progress</a>
-        <a href="plan.html">📋 Create / Edit Split</a>
+        <a href="index.html">Track Today's Workout</a>
+        <a href="history.html">View Workout History</a>
+        <a href="progress.html">See Your Progress</a>
+        <a href="plan.html">Create / Edit Split</a>
     </div>
 
     <div class="content">
@@ -64,7 +64,7 @@
 
         <h2 id="current-day-title" class="day-header">Day 1 – Chest + Back</h2>
         <div id="exercises-list"></div>
-        <button onclick="saveWorkout()" class="save-btn">Save &amp; Finish Workout</button>
+        <button onclick="saveWorkout()" class="save-btn">Save & Finish Workout</button>
     </div>
 
     <script>
@@ -207,7 +207,7 @@
             });
             container.innerHTML = html;
 
-            // Auto-copy from first set (only if not provisional)
+            // Auto-copy from first set
             const exercisesDivs = container.querySelectorAll('.exercise');
             exercisesDivs.forEach(exercise => {
                 const rows = exercise.querySelectorAll('tr');
@@ -236,7 +236,6 @@
                 if (firstReps) firstReps.addEventListener('input', copyFromFirst);
             });
 
-            // General live update for arrows + unsaved data
             const allInputs = container.querySelectorAll('input');
             allInputs.forEach(input => {
                 input.addEventListener('input', () => {
@@ -246,7 +245,7 @@
                 });
             });
 
-            updateArrows(); // initial arrows
+            updateArrows();
         }
 
         function captureUnsavedData() {
@@ -309,7 +308,7 @@
             localStorage.setItem('workoutHistory', JSON.stringify(history));
             if (unsavedDrafts[weekCommencing]) delete unsavedDrafts[weekCommencing][currentDayIndex];
             localStorage.setItem('unsavedDrafts', JSON.stringify(unsavedDrafts));
-            alert('Workout saved! ✅');
+            alert('Workout saved!');
             window.location.href = 'history.html';
         }
 
