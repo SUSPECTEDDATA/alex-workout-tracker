@@ -29,20 +29,20 @@
 <body>
 
     <header>
-        <h1>📋 My Splits</h1>
+        <h1>My Splits</h1>
         <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
 
     <div id="menu" class="menu">
-        <a href="index.html">🚀 Track Today's Workout</a>
-        <a href="history.html">📖 View Workout History</a>
-        <a href="progress.html">📈 See Your Progress</a>
-        <a href="plan.html">📋 Create / Edit Split</a>
+        <a href="index.html">Track Today's Workout</a>
+        <a href="history.html">View Workout History</a>
+        <a href="progress.html">See Your Progress</a>
+        <a href="plan.html">Create / Edit Split</a>
     </div>
 
     <div class="content">
         <div id="split-list"></div>
-        <button onclick="createNewSplit()" class="add-btn" style="width:100%;">+ Create New Split</button>
+        <button onclick="createNewSplit()" class="add-btn" style="width:100%;">Create New Split</button>
     </div>
 
     <div id="edit-form" style="display:none;">
@@ -61,7 +61,7 @@
 
         <div id="edit-days-container"></div>
 
-        <button onclick="saveCurrentSplit()" class="add-btn" style="width:100%;margin-top:20px;">💾 Save Split</button>
+        <button onclick="saveCurrentSplit()" class="add-btn" style="width:100%;margin-top:20px;">Save Split</button>
         <button onclick="cancelEdit()" style="background:#333;color:#fff;width:100%;padding:14px;border-radius:12px;margin-top:8px;">Cancel</button>
     </div>
 
@@ -139,7 +139,7 @@
                     const checked = day.bodyParts.includes(part) ? 'checked' : '';
                     html += `<label><input type="checkbox" ${checked} onchange="toggleBodyPartInEdit(${i}, '${part}')"> ${part}</label>`;
                 });
-                html += `</div><div id="edit-exercises-${i}"></div><button onclick="addExerciseInEdit(${i})" class="add-btn" style="background:#333;color:#fff;">+ Add Exercise</button></div>`;
+                html += `</div><div id="edit-exercises-${i}"></div><button onclick="addExerciseInEdit(${i})" class="add-btn" style="background:#333;color:#fff;">Add Exercise</button></div>`;
                 container.innerHTML += html;
                 renderEditExercises(i, day.exercises);
             }
@@ -177,11 +177,8 @@
                 const checkedBoxes = dayDiv.querySelectorAll('input[type="checkbox"]:checked');
                 const bodyParts = Array.from(checkedBoxes).map(cb => cb.nextSibling.textContent.trim());
                 
-                // Build nice name with body parts
                 let dayName = `Day ${i+1}`;
-                if (bodyParts.length > 0) {
-                    dayName += ` – ${bodyParts.join(' + ')}`;
-                }
+                if (bodyParts.length > 0) dayName += ` – ${bodyParts.join(' + ')}`;
 
                 const exercises = [];
                 dayDiv.querySelectorAll('.exercise-row').forEach(row => {
@@ -207,7 +204,7 @@
             }
 
             localStorage.setItem('customSplits', JSON.stringify(customSplits));
-            alert('✅ Split saved with full day names!');
+            alert('Split saved');
             cancelEdit();
             loadSplits();
         }
