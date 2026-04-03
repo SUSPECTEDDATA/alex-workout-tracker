@@ -29,6 +29,7 @@
         th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
         td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
         input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
+        input[type="number"].provisional { color:#888; font-style:italic; }
         input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
         .trend { font-size:20px; font-weight:bold; width:24px; }
         button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
@@ -67,8 +68,9 @@
     </div>
 
     <script>
-        let currentSplitId = "default";
+        let currentSplitId = localStorage.getItem('lastSelectedSplit') || "default";
         let currentDayIndex = 0;
+        let unsavedDrafts = JSON.parse(localStorage.getItem('unsavedDrafts') || '{}');
 
         const defaultPlan = { id: "default", name: "Alex's Plan", days: [
             { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
@@ -92,6 +94,17 @@
             return d.toISOString().split('T')[0];
         }
 
+        function getExistingWorkout(weekCommencing, dayIndex) {
+            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+            return history.find(entry => entry.weekCommencing === weekCommencing && entry.day === dayIndex + 1);
+        }
+
+        function getLastSessionForDay(dayIndex) {
+            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+            const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+            return sorted.find(entry => entry.day === dayIndex + 1);
+        }
+
         function renderSplitSelector() {
             const select = document.getElementById('split-selector');
             select.innerHTML = '';
@@ -110,37 +123,102 @@
             container.innerHTML = '';
             const allSplits = loadAllSplits();
             const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
-
-            split.days.forEach((day, i) => {
+            split.days.forEach((_, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
-                btn.textContent = `Day ${i+1}`;               // ← CLEAN BUTTONS ONLY
+                btn.textContent = `Day ${i+1}`;
                 btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
                 container.appendChild(btn);
             });
         }
 
-        function renderWorkout() {
+        function renderWorkout(preFillLog = null) {
             const allSplits = loadAllSplits();
             const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
             const day = split.days[currentDayIndex];
-            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;   // ← FULL NAME WITH BODY PARTS
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
 
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
-            let html = '';
-            day.exercises.forEach(ex => {
-                html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
-                for(let i = 0; i < (ex.sets || 4); i++) {
-                    html += `<tr><td>${i+1}</td><td><input type="number" class="weight-input" value=""></td><td><input type="number" class="reps-input" value=""></td><td><input type="checkbox" class="done-checkbox"></td><td class="trend"></td></tr>`;
+
+            let useLog = preFillLog;
+            let isProvisional = false;
+
+            if (!useLog) {
+                const week = document.getElementById('week-commencing').value;
+                const existing = getExistingWorkout(week, currentDayIndex);
+                if (existing) useLog = existing.log;
+                else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) useLog = unsavedDrafts[week][currentDayIndex];
+                else {
+                    const lastSession = getLastSessionForDay(currentDayIndex);
+                    if (lastSession) {
+                        useLog = lastSession.log.map(ex => ({
+                            ...ex,
+                            sets: ex.sets.map(set => ({ ...set, completed: false }))
+                        }));
+                        isProvisional = true;
+                    } else {
+                        useLog = day.exercises.map(ex => ({
+                            name: ex.name,
+                            sets: Array(ex.sets || 4).fill().map(() => ({ weight: '', reps: '', completed: false }))
+                        }));
+                    }
                 }
+            }
+
+            let html = '';
+            day.exercises.forEach((ex, exIndex) => {
+                const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
+                html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
+                currentSets.forEach((setData, setIndex) => {
+                    const provisionalClass = (isProvisional && (setData.weight || setData.reps)) ? 'provisional' : '';
+                    html += `<tr>
+                        <td>${setIndex + 1}</td>
+                        <td><input type="number" value="${setData.weight}" class="weight-input ${provisionalClass}"></td>
+                        <td><input type="number" value="${setData.reps}" class="reps-input ${provisionalClass}"></td>
+                        <td><input type="checkbox" class="done-checkbox" ${setData.completed ? 'checked' : ''}></td>
+                        <td class="trend"></td>
+                    </tr>`;
+                });
                 html += `</table></div>`;
             });
             container.innerHTML = html;
+
+            // Live update on changes
+            const allInputs = container.querySelectorAll('input.weight-input, input.reps-input, input.done-checkbox');
+            allInputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    if (input.classList.contains('provisional')) input.classList.remove('provisional');
+                    captureUnsavedData();
+                });
+            });
+        }
+
+        function captureUnsavedData() {
+            const week = document.getElementById('week-commencing').value;
+            if (!week) return;
+            const log = [];
+            const exercises = document.querySelectorAll('.exercise');
+            exercises.forEach((exDiv, exIndex) => {
+                const sets = [];
+                const rows = exDiv.querySelectorAll('tr');
+                rows.forEach((row, setIndex) => {
+                    if (setIndex === 0) return;
+                    const weight = row.querySelector('.weight-input') ? row.querySelector('.weight-input').value : '';
+                    const reps = row.querySelector('.reps-input') ? row.querySelector('.reps-input').value : '';
+                    const completed = row.querySelector('.done-checkbox') ? row.querySelector('.done-checkbox').checked : false;
+                    sets.push({ weight, reps, completed });
+                });
+                log.push({ sets });
+            });
+            if (!unsavedDrafts[week]) unsavedDrafts[week] = {};
+            unsavedDrafts[week][currentDayIndex] = log;
+            localStorage.setItem('unsavedDrafts', JSON.stringify(unsavedDrafts));
         }
 
         function changeSplit() {
             currentSplitId = document.getElementById('split-selector').value;
+            localStorage.setItem('lastSelectedSplit', currentSplitId);
             currentDayIndex = 0;
             renderDayButtons();
             renderWorkout();
@@ -174,11 +252,14 @@
             const entry = { date: new Date().toISOString(), day: currentDayIndex + 1, dayName: day.name, weekCommencing, log };
             history.unshift(entry);
             localStorage.setItem('workoutHistory', JSON.stringify(history));
+            if (unsavedDrafts[weekCommencing]) delete unsavedDrafts[weekCommencing][currentDayIndex];
+            localStorage.setItem('unsavedDrafts', JSON.stringify(unsavedDrafts));
             alert('Workout saved! ✅');
             window.location.href = 'history.html';
         }
 
         function startApp() {
+            // Week commencing
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
@@ -186,6 +267,22 @@
 
             const weekInput = document.getElementById('week-commencing');
             weekInput.addEventListener('change', () => { weekInput.value = getMonday(weekInput.value); });
+
+            // Check if we are loading a past workout
+            const params = new URLSearchParams(window.location.search);
+            const pastIndex = params.get('pastIndex');
+            if (pastIndex !== null) {
+                const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+                const entry = history[pastIndex];
+                if (entry) {
+                    currentSplitId = entry.day <= 5 ? "default" : "custom"; // simple fallback
+                    currentDayIndex = entry.day - 1;
+                    renderSplitSelector();
+                    renderDayButtons();
+                    renderWorkout(entry.log);
+                    return;
+                }
+            }
 
             renderSplitSelector();
             renderDayButtons();
