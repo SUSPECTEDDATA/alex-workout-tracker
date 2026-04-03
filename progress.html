@@ -23,16 +23,16 @@
 <body>
 
     <header>
-        <h1>📈 Your Progress</h1>
+        <h1>Your Progress</h1>
         <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
 
     <div id="menu" class="menu">
-    <a href="index.html">🚀 Track Today's Workout</a>
-    <a href="history.html">📖 View Workout History</a>
-    <a href="progress.html">📈 See Your Progress</a>
-    <a href="plan.html">📋 Create / Edit Split</a>
-</div>
+        <a href="index.html">Track Today's Workout</a>
+        <a href="history.html">View Workout History</a>
+        <a href="progress.html">See Your Progress</a>
+        <a href="plan.html">Create / Edit Split</a>
+    </div>
 
     <div class="content">
         <div class="stat-card">
@@ -50,7 +50,9 @@
             menu.classList.toggle('show');
         }
 
-        function getAllExercises() { /* same list as before */ return ["Barbell Bench Press","Bent-Over Barbell Row","Seated Chest Press Machine","Wide-Grip Lat Pulldown","Cable Flyes","Close-Grip Lat Pulldown","Standing Overhead Barbell Press","Dumbbell Lateral Raises","Rear Delt Flyes","Single Arm Tricep Pushdown","Overhead Dumbbell Tricep Extension","Alternating Dumbbell Curl","Preacher Curl","Reverse Preacher Curl","Barbell Back Squat","Leg Press (high feet)","Lying Leg Curl","Leg Extension","Seated Calf Raises"]; }
+        function getAllExercises() {
+            return ["Barbell Bench Press","Bent-Over Barbell Row","Seated Chest Press Machine","Wide-Grip Lat Pulldown","Cable Flyes","Close-Grip Lat Pulldown","Standing Overhead Barbell Press","Dumbbell Lateral Raises","Rear Delt Flyes","Single Arm Tricep Pushdown","Overhead Dumbbell Tricep Extension","Alternating Dumbbell Curl","Preacher Curl","Reverse Preacher Curl","Barbell Back Squat","Leg Press (high feet)","Lying Leg Curl","Leg Extension","Seated Calf Raises"];
+        }
 
         function calculatePersonalBests() {
             const history = loadFromStorage('workoutHistory');
