@@ -17,9 +17,10 @@
         .menu a:hover { background:#222; }
         .content { padding:16px; }
         .section { background:#1c1c1c; padding:20px; margin-bottom:20px; border-radius:16px; }
-        .day { background:#222; padding:16px; margin-bottom:16px; border-radius:12px; }
+        .split-item { background:#222; padding:16px; margin-bottom:12px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; }
+        .day { background:#181818; padding:16px; margin-bottom:16px; border-radius:12px; }
         .body-part-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:8px; margin:12px 0; }
-        .body-part-grid label { background:#181818; padding:10px; border-radius:10px; text-align:center; cursor:pointer; }
+        .body-part-grid label { background:#222; padding:10px; border-radius:10px; text-align:center; cursor:pointer; }
         .exercise-row { display:flex; gap:8px; margin-bottom:8px; }
         .exercise-row input { flex:1; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; padding:10px; }
         button.add-btn { background:var(--accent); color:#111; border:none; padding:12px 20px; border-radius:12px; font-weight:700; margin-top:12px; }
@@ -28,7 +29,7 @@
 <body>
 
     <header>
-        <h1>📋 Create Workout Split</h1>
+        <h1>📋 My Splits</h1>
         <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
 
@@ -40,112 +41,179 @@
     </div>
 
     <div class="content">
+        <div id="split-list"></div>
+        <button onclick="createNewSplit()" class="add-btn" style="width:100%;">+ Create New Split</button>
+    </div>
+
+    <!-- EDIT / CREATE FORM (hidden by default) -->
+    <div id="edit-form" style="display:none;">
         <div class="section">
             <label>Split Name</label>
-            <input id="split-name" type="text" value="Upper Body Focus" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
+            <input id="split-name" type="text" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
         </div>
 
         <div class="section">
             <label>Days per week</label>
-            <select id="num-days" onchange="renderDays()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
-                <option value="1">1 day</option>
-                <option value="2">2 days</option>
-                <option value="3" selected>3 days</option>
-                <option value="4">4 days</option>
-                <option value="5">5 days</option>
-                <option value="6">6 days</option>
-                <option value="7">7 days</option>
+            <select id="num-days" onchange="renderEditDays()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
+                <option value="1">1 day</option><option value="2">2 days</option><option value="3" selected>3 days</option>
+                <option value="4">4 days</option><option value="5">5 days</option><option value="6">6 days</option><option value="7">7 days</option>
             </select>
         </div>
 
-        <div id="days-container"></div>
+        <div id="edit-days-container"></div>
 
-        <button onclick="saveSplit()" class="add-btn" style="width:100%;">💾 Save This Split</button>
+        <button onclick="saveCurrentSplit()" class="add-btn" style="width:100%;margin-top:20px;">💾 Save Split</button>
+        <button onclick="cancelEdit()" style="background:#333;color:#fff;width:100%;padding:14px;border-radius:12px;margin-top:8px;">Cancel</button>
     </div>
 
     <script>
+        let customSplits = [];
+        let currentEditingId = null;
         const bodyPartsList = ["Shoulders","Arms","Chest","Back","Legs"];
 
-        let currentSplit = {
-            name: "Upper Body Focus",
-            days: []
-        };
-
-        function loadSplit() {
-            const saved = localStorage.getItem('customSplit');
-            if (saved) currentSplit = JSON.parse(saved);
-            document.getElementById('split-name').value = currentSplit.name || "Upper Body Focus";
-        }
-
-        function renderDays() {
-            const num = parseInt(document.getElementById('num-days').value);
-            const container = document.getElementById('days-container');
-            container.innerHTML = '';
-
-            currentSplit.days = currentSplit.days.slice(0, num); // keep existing if fewer days
-
-            for (let i = 0; i < num; i++) {
-                if (!currentSplit.days[i]) {
-                    currentSplit.days[i] = { bodyParts: [], exercises: [] };
-                }
-                const day = currentSplit.days[i];
-
-                let html = `
-                <div class="day">
-                    <strong>Day ${i+1}</strong>
-                    <div class="body-part-grid">`;
-
-                bodyPartsList.forEach(part => {
-                    const checked = day.bodyParts.includes(part) ? 'checked' : '';
-                    html += `<label><input type="checkbox" ${checked} onchange="toggleBodyPart(${i}, '${part}')"> ${part}</label>`;
-                });
-
-                html += `</div><div id="exercises-${i}"></div>
-                <button onclick="addExercise(${i})" class="add-btn" style="background:#333;color:#fff;">+ Add Exercise</button>
-                </div>`;
-
-                container.innerHTML += html;
-                renderExercises(i);
+        function loadSplits() {
+            const saved = localStorage.getItem('customSplits');
+            if (saved) customSplits = JSON.parse(saved);
+            // Migrate old single split if it exists
+            else if (localStorage.getItem('customSplit')) {
+                const old = JSON.parse(localStorage.getItem('customSplit'));
+                customSplits = [{ id: 'split-' + Date.now(), name: old.name || 'Upper Body Focus', days: old.days || [] }];
+                localStorage.removeItem('customSplit');
             }
+            renderSplitList();
         }
 
-        function toggleBodyPart(dayIndex, part) {
-            const day = currentSplit.days[dayIndex];
-            if (day.bodyParts.includes(part)) {
-                day.bodyParts = day.bodyParts.filter(p => p !== part);
-            } else {
-                day.bodyParts.push(part);
+        function renderSplitList() {
+            const container = document.getElementById('split-list');
+            if (customSplits.length === 0) {
+                container.innerHTML = `<p style="color:#666;text-align:center;padding:60px 20px;">No splits yet.<br>Tap "Create New Split" below!</p>`;
+                return;
             }
-        }
-
-        function renderExercises(dayIndex) {
-            const container = document.getElementById(`exercises-${dayIndex}`);
-            const exercises = currentSplit.days[dayIndex].exercises;
             let html = '';
-            exercises.forEach((ex, idx) => {
+            customSplits.forEach(split => {
                 html += `
-                <div class="exercise-row">
-                    <input type="text" value="${ex.name}" onchange="currentSplit.days[${dayIndex}].exercises[${idx}].name=this.value">
-                    <input type="number" value="${ex.sets}" style="width:80px" onchange="currentSplit.days[${dayIndex}].exercises[${idx}].sets=parseInt(this.value)">
-                    <button onclick="removeExercise(${dayIndex},${idx});renderExercises(${dayIndex});" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button>
+                <div class="split-item">
+                    <div>
+                        <strong>${split.name}</strong><br>
+                        <small style="color:#888;">${split.days.length} days</small>
+                    </div>
+                    <div>
+                        <button onclick="editSplit('${split.id}')" style="background:#333;color:#fff;border:none;padding:8px 16px;border-radius:8px;margin-right:8px;">Edit</button>
+                        <button onclick="deleteSplit('${split.id}')" style="background:#ff4444;color:white;border:none;padding:8px 16px;border-radius:8px;">Delete</button>
+                    </div>
                 </div>`;
             });
             container.innerHTML = html;
         }
 
-        function addExercise(dayIndex) {
-            currentSplit.days[dayIndex].exercises.push({ name: "", sets: 3 });
-            renderExercises(dayIndex);
+        function createNewSplit() {
+            currentEditingId = null;
+            document.getElementById('edit-form').style.display = 'block';
+            document.getElementById('split-list').style.display = 'none';
+            document.getElementById('split-name').value = "New Split";
+            document.getElementById('num-days').value = "3";
+            renderEditDays();
         }
 
-        function removeExercise(dayIndex, exIndex) {
-            currentSplit.days[dayIndex].exercises.splice(exIndex, 1);
+        function editSplit(id) {
+            currentEditingId = id;
+            const split = customSplits.find(s => s.id === id);
+            if (!split) return;
+            document.getElementById('edit-form').style.display = 'block';
+            document.getElementById('split-list').style.display = 'none';
+            document.getElementById('split-name').value = split.name;
+            document.getElementById('num-days').value = split.days.length;
+            renderEditDays(split);
         }
 
-        function saveSplit() {
-            currentSplit.name = document.getElementById('split-name').value || "Untitled Split";
-            localStorage.setItem('customSplit', JSON.stringify(currentSplit));
-            alert('✅ Split saved! You can now use it in the Track page (coming next).');
+        function cancelEdit() {
+            document.getElementById('edit-form').style.display = 'none';
+            document.getElementById('split-list').style.display = 'block';
+            currentEditingId = null;
+        }
+
+        function renderEditDays(preloadSplit = null) {
+            const num = parseInt(document.getElementById('num-days').value);
+            const container = document.getElementById('edit-days-container');
+            container.innerHTML = '';
+
+            const days = preloadSplit ? preloadSplit.days : Array(num).fill().map(() => ({ name: '', bodyParts: [], exercises: [] }));
+
+            for (let i = 0; i < num; i++) {
+                const day = days[i] || { name: '', bodyParts: [], exercises: [] };
+                let html = `<div class="day"><strong>Day ${i+1}</strong><div class="body-part-grid">`;
+                bodyPartsList.forEach(part => {
+                    const checked = day.bodyParts.includes(part) ? 'checked' : '';
+                    html += `<label><input type="checkbox" ${checked} onchange="toggleBodyPartInEdit(${i}, '${part}')"> ${part}</label>`;
+                });
+                html += `</div><div id="edit-exercises-${i}"></div><button onclick="addExerciseInEdit(${i})" class="add-btn" style="background:#333;color:#fff;">+ Add Exercise</button></div>`;
+                container.innerHTML += html;
+                renderEditExercises(i, day.exercises);
+            }
+        }
+
+        function toggleBodyPartInEdit(dayIndex, part) {
+            // Handled in the global scope – we’ll read the checkboxes when saving
+        }
+
+        function renderEditExercises(dayIndex, exercises) {
+            const container = document.getElementById(`edit-exercises-${dayIndex}`);
+            let html = '';
+            exercises.forEach((ex, idx) => {
+                html += `<div class="exercise-row"><input type="text" value="${ex.name}" onchange="this.closest('.exercise-row').dataset.name=this.value"><input type="number" value="${ex.sets}" style="width:80px" onchange="this.closest('.exercise-row').dataset.sets=this.value"><button onclick="this.closest('.exercise-row').remove()" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function addExerciseInEdit(dayIndex) {
+            const container = document.getElementById(`edit-exercises-${dayIndex}`);
+            const row = document.createElement('div');
+            row.className = 'exercise-row';
+            row.innerHTML = `<input type="text" placeholder="Exercise name"><input type="number" value="3" style="width:80px"><button onclick="this.closest('.exercise-row').remove()" style="background:#ff4444;color:white;border:none;width:40px;border-radius:10px;">×</button>`;
+            container.appendChild(row);
+        }
+
+        function saveCurrentSplit() {
+            const name = document.getElementById('split-name').value.trim() || "Untitled Split";
+            const numDays = parseInt(document.getElementById('num-days').value);
+            const days = [];
+
+            for (let i = 0; i < numDays; i++) {
+                const dayDiv = document.querySelectorAll('.day')[i];
+                const bodyParts = Array.from(dayDiv.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.nextSibling.textContent.trim());
+                const exercises = [];
+                dayDiv.querySelectorAll('.exercise-row').forEach(row => {
+                    const inputs = row.querySelectorAll('input');
+                    if (inputs.length >= 2) {
+                        const exName = inputs[0].value.trim();
+                        const sets = parseInt(inputs[1].value) || 3;
+                        if (exName) exercises.push({ name: exName, sets });
+                    }
+                });
+                days.push({ name: `Day ${i+1}`, bodyParts, exercises });
+            }
+
+            if (currentEditingId) {
+                const split = customSplits.find(s => s.id === currentEditingId);
+                if (split) {
+                    split.name = name;
+                    split.days = days;
+                }
+            } else {
+                customSplits.push({ id: 'split-' + Date.now(), name, days });
+            }
+
+            localStorage.setItem('customSplits', JSON.stringify(customSplits));
+            alert('✅ Split saved!');
+            cancelEdit();
+            loadSplits();
+        }
+
+        function deleteSplit(id) {
+            if (!confirm('Delete this split permanently?')) return;
+            customSplits = customSplits.filter(s => s.id !== id);
+            localStorage.setItem('customSplits', JSON.stringify(customSplits));
+            loadSplits();
         }
 
         function toggleMenu() {
@@ -153,11 +221,7 @@
             menu.classList.toggle('show');
         }
 
-        // Load on start
-        window.onload = () => {
-            loadSplit();
-            renderDays();
-        };
+        window.onload = loadSplits;
     </script>
 </body>
 </html>
