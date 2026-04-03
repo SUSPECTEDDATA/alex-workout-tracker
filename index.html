@@ -3,54 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Alex's Workout Tracker</title>
+    <title>Track - Alex's Workout Tracker</title>
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0; padding: 0; background: #0f0f0f; color: #fff;
-            max-width: 600px; margin: 0 auto; min-height: 100vh;
-        }
-        header {
-            background: #181818; padding: 20px 16px; border-bottom: 3px solid var(--accent);
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        h1 { margin: 0; font-size: 24px; font-weight: 700; }
-        .week-input { padding: 18px 16px 8px; background: #181818; display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; }
-        .week-input input[type="date"] { flex: 1; padding: 14px 16px; background: #222; border: 2px solid #333; color: #fff; border-radius: 12px; font-size: 17px; }
-        .week-input input[type="date"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,255,157,0.2); }
-        .day-buttons { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px 16px; background: #181818; }
-        .day-btn { flex: 1; min-width: 68px; padding: 14px 8px; background: #222; border: none; color: #fff; border-radius: 14px; font-size: 15.5px; font-weight: 700; cursor: pointer; }
-        .day-btn.active { background: var(--accent); color: #111; transform: scale(1.05); }
-        .content { padding: 16px; padding-bottom: 80px; }
-        .day-header { font-size: 24px; font-weight: 700; margin: 8px 0 18px; }
-        .exercise { background: #1c1c1c; margin-bottom: 22px; border-radius: 16px; overflow: hidden; }
-        .exercise-name { padding: 18px 20px 14px; font-size: 20px; font-weight: 700; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #151515; padding: 12px 8px; font-size: 13.5px; color: #888; text-align: center; }
-        td { padding: 14px 8px; text-align: center; border-top: 1px solid #252525; height: 62px; }
-        input[type="number"] { width: 100%; max-width: 88px; padding: 10px 8px; background: #252525; border: 2px solid #333; color: #fff; border-radius: 10px; font-size: 18px; text-align: center; }
-        input[type="number"].provisional { color: #888; font-style: italic; }
-        input[type="checkbox"] { width: 28px; height: 28px; accent-color: var(--accent); }
-        .trend { font-size: 20px; font-weight: bold; width: 24px; }
-        button.save-btn { background: var(--accent); color: #111; border: none; padding: 18px; font-size: 18px; font-weight: 700; border-radius: 16px; width: 100%; margin-top: 12px; }
-        .back-btn {
-            background: #333;
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:0; padding:0; background:#0f0f0f; color:#fff; max-width:600px; margin:0 auto; min-height:100vh; }
+        header { background:#181818; padding:20px 16px; border-bottom:3px solid var(--accent); display:flex; align-items:center; justify-content:space-between; }
+        h1 { margin:0; font-size:24px; font-weight:700; }
+        .hamburger { font-size:28px; background:none; border:none; color:#fff; cursor:pointer; padding:8px; }
+        .menu { display:none; position:absolute; top:68px; right:16px; background:#181818; border-radius:16px; padding:12px 0; box-shadow:0 10px 20px rgba(0,0,0,0.5); width:280px; z-index:1000; }
+        .menu.show { display:block; }
+        .menu a { display:block; padding:16px 24px; color:#fff; text-decoration:none; font-size:18px; font-weight:600; }
+        .menu a:hover { background:#222; }
+        .content { padding:16px; padding-bottom:80px; }
+        .week-input { padding:18px 16px 8px; background:#181818; display:flex; align-items:center; gap:12px; font-size:16px; font-weight:600; }
+        .week-input input[type="date"] { flex:1; padding:14px 16px; background:#222; border:2px solid #333; color:#fff; border-radius:12px; font-size:17px; }
+        .split-selector { padding:12px 16px; background:#181818; border-radius:12px; margin-bottom:16px; }
+        .day-buttons { display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 16px; background:#181818; }
+        .day-btn { flex:1; min-width:68px; padding:14px 8px; background:#222; border:none; color:#fff; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
+        .day-btn.active { background:var(--accent); color:#111; transform:scale(1.05); }
+        .day-header { font-size:24px; font-weight:700; margin:8px 0 18px; }
+        .exercise { background:#1c1c1c; margin-bottom:22px; border-radius:16px; overflow:hidden; }
+        .exercise-name { padding:18px 20px 14px; font-size:20px; font-weight:700; }
+        table { width:100%; border-collapse:collapse; }
+        th { background:#151515; padding:12px 8px; font-size:13.5px; color:#888; text-align:center; }
+        td { padding:14px 8px; text-align:center; border-top:1px solid #252525; height:62px; }
+        input[type="number"] { width:100%; max-width:88px; padding:10px 8px; background:#252525; border:2px solid #333; color:#fff; border-radius:10px; font-size:18px; text-align:center; }
+        input[type="number"].provisional { color:#888; font-style:italic; }
+        input[type="checkbox"] { width:28px; height:28px; accent-color:var(--accent); }
+        .trend { font-size:20px; font-weight:bold; width:24px; }
+        button.save-btn { background:var(--accent); color:#111; border:none; padding:18px; font-size:18px; font-weight:700; border-radius:16px; width:100%; margin-top:12px; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🚀 Track Workout</h1>
-        <a href="index.html" class="back-btn">← Home</a>
+        <h1>Track Workout</h1>
+        <button onclick="toggleMenu()" class="hamburger">☰</button>
     </header>
+
+    <div id="menu" class="menu">
+        <a href="index.html">Track Today's Workout</a>
+        <a href="history.html">View Workout History</a>
+        <a href="progress.html">See Your Progress</a>
+        <a href="plan.html">Create / Edit Split</a>
+    </div>
 
     <div class="content">
         <div class="week-input">
@@ -58,71 +55,35 @@
             <input type="date" id="week-commencing">
         </div>
 
-        <div class="day-buttons">
-            <button class="day-btn active" onclick="selectDay(1, this)">Day 1</button>
-            <button class="day-btn" onclick="selectDay(2, this)">Day 2</button>
-            <button class="day-btn" onclick="selectDay(3, this)">Day 3</button>
-            <button class="day-btn" onclick="selectDay(4, this)">Day 4</button>
-            <button class="day-btn" onclick="selectDay(5, this)">Day 5</button>
+        <div class="split-selector">
+            <label style="font-weight:600;">Using Split:</label><br>
+            <select id="split-selector" onchange="changeSplit()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;"></select>
         </div>
+
+        <div class="day-buttons" id="day-buttons"></div>
 
         <h2 id="current-day-title" class="day-header">Day 1 – Chest + Back</h2>
         <div id="exercises-list"></div>
-        <button onclick="saveWorkout()" class="save-btn">Save &amp; Finish Workout</button>
+        <button onclick="saveWorkout()" class="save-btn">Save & Finish Workout</button>
     </div>
 
     <script>
-        const workoutPlan = {
-            1: { name: "Day 1 – Chest + Back", exercises: [
-                { name: "Barbell Bench Press", initialSets: 4, reps: "8-10" },
-                { name: "Bent-Over Barbell Row", initialSets: 4, reps: "8-10" },
-                { name: "Seated Chest Press Machine", initialSets: 4, reps: "10-12" },
-                { name: "Wide-Grip Lat Pulldown", initialSets: 4, reps: "8-12" },
-                { name: "Cable Flyes", initialSets: 3, reps: "12-15" },
-                { name: "Close-Grip Lat Pulldown", initialSets: 3, reps: "10-12" }
-            ]},
-            2: { name: "Day 2 – Shoulders + Arms", exercises: [
-                { name: "Standing Overhead Barbell Press", initialSets: 4, reps: "8-10" },
-                { name: "Dumbbell Lateral Raises", initialSets: 4, reps: "10-12" },
-                { name: "Rear Delt Flyes", initialSets: 3, reps: "12-15" },
-                { name: "Single Arm Tricep Pushdown", initialSets: 4, reps: "12-15" },
-                { name: "Overhead Dumbbell Tricep Extension", initialSets: 3, reps: "10-12" },
-                { name: "Alternating Dumbbell Curl", initialSets: 4, reps: "8-10" },
-                { name: "Preacher Curl", initialSets: 3, reps: "10-12" },
-                { name: "Reverse Preacher Curl", initialSets: 3, reps: "10-12" }
-            ]},
-            3: { name: "Day 3 – Chest + Back", exercises: [
-                { name: "Barbell Bench Press", initialSets: 4, reps: "8-10" },
-                { name: "Bent-Over Barbell Row", initialSets: 4, reps: "8-10" },
-                { name: "Seated Chest Press Machine", initialSets: 4, reps: "10-12" },
-                { name: "Wide-Grip Lat Pulldown", initialSets: 4, reps: "8-12" },
-                { name: "Cable Flyes", initialSets: 3, reps: "12-15" },
-                { name: "Close-Grip Lat Pulldown", initialSets: 3, reps: "10-12" }
-            ]},
-            4: { name: "Day 4 – Shoulders + Arms", exercises: [
-                { name: "Standing Overhead Barbell Press", initialSets: 4, reps: "8-10" },
-                { name: "Dumbbell Lateral Raises", initialSets: 4, reps: "10-12" },
-                { name: "Rear Delt Flyes", initialSets: 3, reps: "12-15" },
-                { name: "Cable Tricep Pushdown", initialSets: 4, reps: "12-15" },
-                { name: "Overhead Dumbbell Tricep Extension", initialSets: 3, reps: "10-12" },
-                { name: "Alternating Dumbbell Curl", initialSets: 4, reps: "8-10" },
-                { name: "Preacher Curl", initialSets: 3, reps: "10-12" },
-                { name: "Reverse Preacher Curl", initialSets: 3, reps: "10-12" }
-            ]},
-            5: { name: "Day 5 – Legs", exercises: [
-                { name: "Barbell Back Squat", initialSets: 4, reps: "8-10" },
-                { name: "Leg Press (high feet)", initialSets: 3, reps: "10-12" },
-                { name: "Lying Leg Curl", initialSets: 3, reps: "10-12" },
-                { name: "Leg Extension", initialSets: 3, reps: "12-15" },
-                { name: "Seated Calf Raises", initialSets: 3, reps: "12-15" }
-            ]}
-        };
+        let currentSplitId = localStorage.getItem('lastSelectedSplit') || "default";
+        let currentDayIndex = 0;
+        let unsavedDrafts = JSON.parse(localStorage.getItem('unsavedDrafts') || '{}');
 
-        let currentDay = 1;
-        let unsavedDrafts = {};
+        const defaultPlan = { id: "default", name: "Alex's Plan", days: [
+            { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+            { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Single Arm Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+            { name: "Day 3 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
+            { name: "Day 4 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Cable Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
+            { name: "Day 5 – Legs", exercises: [{name:"Barbell Back Squat",sets:4},{name:"Leg Press (high feet)",sets:3},{name:"Lying Leg Curl",sets:3},{name:"Leg Extension",sets:3},{name:"Seated Calf Raises",sets:3}] }
+        ]};
 
-        function saveToStorage(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
-        function loadFromStorage(key) { const data = localStorage.getItem(key); return data ? JSON.parse(data) : {}; }
+        function loadAllSplits() {
+            let splits = JSON.parse(localStorage.getItem('customSplits') || '[]');
+            return [defaultPlan, ...splits];
+        }
 
         function getMonday(dateStr) {
             if (!dateStr) return '';
@@ -133,122 +94,199 @@
             return d.toISOString().split('T')[0];
         }
 
-        function getLastSessionForDay(day) {
-            const history = loadFromStorage('workoutHistory') || [];
-            const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
-            return sorted.find(entry => entry.day === day);
-        }
-
-        function getExistingWorkout(weekCommencing, day) {
-            const history = loadFromStorage('workoutHistory') || [];
-            return history.find(entry => entry.weekCommencing === weekCommencing && entry.day === day);
-        }
-
         function getHistoricalMaxForExercise(exerciseName) {
-            const history = loadFromStorage('workoutHistory') || [];
+            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
             let maxVolume = 0;
             history.forEach(entry => {
                 const ex = entry.log.find(e => e.name === exerciseName);
-                if (ex) {
-                    ex.sets.forEach(set => {
-                        const w = parseFloat(set.weight) || 0;
-                        const r = parseFloat(set.reps) || 0;
-                        const volume = w * r;
-                        if (volume > maxVolume) maxVolume = volume;
-                    });
-                }
+                if (ex) ex.sets.forEach(set => {
+                    const w = parseFloat(set.weight) || 0;
+                    const r = parseFloat(set.reps) || 0;
+                    if (w * r > maxVolume) maxVolume = w * r;
+                });
             });
             return maxVolume;
         }
 
-        function captureUnsavedData(weekCommencing = null, dayNum = null) {
-            const week = weekCommencing || document.getElementById('week-commencing').value;
-            const day = dayNum || currentDay;
-            if (!week) return;
-            const log = [];
-            const exercises = document.querySelectorAll('.exercise');
-            const planForThisDay = workoutPlan[day];
-            exercises.forEach((exDiv, exIndex) => {
-                const sets = [];
-                const rows = exDiv.querySelectorAll('tr');
-                rows.forEach((row, setIndex) => {
-                    if (setIndex === 0) return;
-                    const weight = row.querySelector('.weight-input') ? row.querySelector('.weight-input').value : '';
-                    const reps = row.querySelector('.reps-input') ? row.querySelector('.reps-input').value : '';
-                    const completed = row.querySelector('.done-checkbox') ? row.querySelector('.done-checkbox').checked : false;
-                    sets.push({ weight, reps, completed });
-                });
-                log.push({ name: planForThisDay.exercises[exIndex].name, sets });
+        function renderSplitSelector() {
+            const select = document.getElementById('split-selector');
+            select.innerHTML = '';
+            const allSplits = loadAllSplits();
+            allSplits.forEach(split => {
+                const option = document.createElement('option');
+                option.value = split.id;
+                option.textContent = split.name;
+                if (split.id === currentSplitId) option.selected = true;
+                select.appendChild(option);
             });
-            if (!unsavedDrafts[week]) unsavedDrafts[week] = {};
-            unsavedDrafts[week][day] = log;
-            saveToStorage('unsavedDrafts', unsavedDrafts);
+        }
+
+        function renderDayButtons() {
+            const container = document.getElementById('day-buttons');
+            container.innerHTML = '';
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            split.days.forEach((_, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
+                btn.textContent = `Day ${i+1}`;
+                btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
+                container.appendChild(btn);
+            });
+        }
+
+        function updateArrows() {
+            const exercises = document.querySelectorAll('.exercise');
+            exercises.forEach(exercise => {
+                const name = exercise.querySelector('.exercise-name').textContent;
+                const historicalMax = getHistoricalMaxForExercise(name);
+                const rows = exercise.querySelectorAll('tr');
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    const w = parseFloat(row.querySelector('.weight-input').value) || 0;
+                    const r = parseFloat(row.querySelector('.reps-input').value) || 0;
+                    const volume = w * r;
+                    let arrow = '';
+                    if (volume > 0) {
+                        if (volume > historicalMax) arrow = `<span style="color:#00ff9d">▲</span>`;
+                        else if (historicalMax > 0 && volume < historicalMax) arrow = `<span style="color:#ff6666">▼</span>`;
+                    }
+                    row.querySelector('.trend').innerHTML = arrow;
+                }
+            });
         }
 
         function renderWorkout(preFillLog = null) {
-            console.log("✅ renderWorkout started for Day", currentDay);
-            const plan = workoutPlan[currentDay];
-            document.getElementById('current-day-title').textContent = plan.name;
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            const day = split.days[currentDayIndex];
+            document.getElementById('current-day-title').textContent = day.name || `Day ${currentDayIndex+1}`;
+
             const container = document.getElementById('exercises-list');
             container.innerHTML = '';
-            const weekCommencing = document.getElementById('week-commencing').value || '';
+
             let useLog = preFillLog;
             let isProvisional = false;
+
             if (!useLog) {
-                const existing = getExistingWorkout(weekCommencing, currentDay);
+                const week = document.getElementById('week-commencing').value;
+                const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+                const existing = history.find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
                 if (existing) useLog = existing.log;
-                else if (unsavedDrafts[weekCommencing] && unsavedDrafts[weekCommencing][currentDay]) useLog = unsavedDrafts[weekCommencing][currentDay];
+                else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) useLog = unsavedDrafts[week][currentDayIndex];
                 else {
-                    const lastSession = getLastSessionForDay(currentDay);
-                    if (lastSession) {
-                        useLog = lastSession.log.map(exercise => ({
-                            ...exercise,
-                            sets: exercise.sets.map(set => ({ ...set, completed: false }))
-                        }));
+                    const sorted = [...history].sort((a,b) => new Date(b.date)-new Date(a.date));
+                    const last = sorted.find(e => e.day === currentDayIndex + 1);
+                    if (last) {
+                        useLog = last.log.map(ex => ({...ex, sets: ex.sets.map(s => ({...s, completed:false}))}));
                         isProvisional = true;
                     } else {
-                        useLog = plan.exercises.map(ex => ({
+                        useLog = day.exercises.map(ex => ({
                             name: ex.name,
-                            sets: Array(ex.initialSets).fill().map(() => ({ weight: '', reps: '', completed: false }))
+                            sets: Array(ex.sets || 4).fill().map(() => ({weight:'', reps:'', completed:false}))
                         }));
                     }
                 }
             }
 
             let html = '';
-            plan.exercises.forEach((ex, exIndex) => {
+            day.exercises.forEach((ex, exIndex) => {
                 const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
-                const historicalMax = getHistoricalMaxForExercise(ex.name);
-
                 html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
                 currentSets.forEach((setData, setIndex) => {
                     const provisionalClass = (isProvisional && (setData.weight || setData.reps)) ? 'provisional' : '';
-                    const w = parseFloat(setData.weight) || 0;
-                    const r = parseFloat(setData.reps) || 0;
-                    const currentVolume = w * r;
-
-                    let arrow = '';
-                    if (currentVolume > 0) {
-                        if (currentVolume > historicalMax) arrow = `<span style="color:#00ff9d">▲</span>`;
-                        else if (historicalMax > 0 && currentVolume < historicalMax) arrow = `<span style="color:#ff6666">▼</span>`;
-                    }
-
                     html += `<tr>
-                        <td class="set-number">${setIndex + 1}</td>
+                        <td>${setIndex + 1}</td>
                         <td><input type="number" value="${setData.weight}" class="weight-input ${provisionalClass}"></td>
                         <td><input type="number" value="${setData.reps}" class="reps-input ${provisionalClass}"></td>
                         <td><input type="checkbox" class="done-checkbox" ${setData.completed ? 'checked' : ''}></td>
-                        <td class="trend">${arrow}</td>
+                        <td class="trend"></td>
                     </tr>`;
                 });
                 html += `</table></div>`;
             });
             container.innerHTML = html;
-            console.log("✅ Exercises rendered:", plan.exercises.length);
+
+            // Auto-copy from first set
+            const exercisesDivs = container.querySelectorAll('.exercise');
+            exercisesDivs.forEach(exercise => {
+                const rows = exercise.querySelectorAll('tr');
+                if (rows.length < 2) return;
+
+                const firstWeight = rows[1].querySelector('.weight-input');
+                const firstReps = rows[1].querySelector('.reps-input');
+
+                const copyFromFirst = () => {
+                    if (firstWeight && firstWeight.value) {
+                        for (let i = 2; i < rows.length; i++) {
+                            const target = rows[i].querySelector('.weight-input');
+                            if (target && !target.classList.contains('provisional')) target.value = firstWeight.value;
+                        }
+                    }
+                    if (firstReps && firstReps.value) {
+                        for (let i = 2; i < rows.length; i++) {
+                            const target = rows[i].querySelector('.reps-input');
+                            if (target && !target.classList.contains('provisional')) target.value = firstReps.value;
+                        }
+                    }
+                    updateArrows();
+                };
+
+                if (firstWeight) firstWeight.addEventListener('input', copyFromFirst);
+                if (firstReps) firstReps.addEventListener('input', copyFromFirst);
+            });
+
+            const allInputs = container.querySelectorAll('input');
+            allInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('provisional')) input.classList.remove('provisional');
+                    captureUnsavedData();
+                    updateArrows();
+                });
+            });
+
+            updateArrows();
         }
 
-        window.saveWorkout = function() {
-            const plan = workoutPlan[currentDay];
+        function captureUnsavedData() {
+            const week = document.getElementById('week-commencing').value;
+            if (!week) return;
+            const log = [];
+            const exercises = document.querySelectorAll('.exercise');
+            exercises.forEach(exDiv => {
+                const sets = [];
+                const rows = exDiv.querySelectorAll('tr');
+                rows.forEach((row, setIndex) => {
+                    if (setIndex === 0) return;
+                    const weight = row.querySelector('.weight-input').value;
+                    const reps = row.querySelector('.reps-input').value;
+                    const completed = row.querySelector('.done-checkbox').checked;
+                    sets.push({ weight, reps, completed });
+                });
+                log.push({ sets });
+            });
+            if (!unsavedDrafts[week]) unsavedDrafts[week] = {};
+            unsavedDrafts[week][currentDayIndex] = log;
+            localStorage.setItem('unsavedDrafts', JSON.stringify(unsavedDrafts));
+        }
+
+        function changeSplit() {
+            currentSplitId = document.getElementById('split-selector').value;
+            localStorage.setItem('lastSelectedSplit', currentSplitId);
+            currentDayIndex = 0;
+            renderDayButtons();
+            renderWorkout();
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('show');
+        }
+
+        function saveWorkout() {
+            const allSplits = loadAllSplits();
+            const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+            const day = split.days[currentDayIndex];
             const log = [];
             const exercises = document.querySelectorAll('.exercise');
             exercises.forEach((exDiv, exIndex) => {
@@ -261,28 +299,17 @@
                     const completed = row.querySelector('.done-checkbox').checked;
                     sets.push({ weight, reps, completed });
                 });
-                log.push({ name: plan.exercises[exIndex].name, sets });
+                log.push({ name: day.exercises[exIndex].name, sets });
             });
             const weekCommencing = document.getElementById('week-commencing').value;
-            const history = loadFromStorage('workoutHistory') || [];
-            const entry = { date: new Date().toISOString(), day: currentDay, dayName: plan.name, weekCommencing, log };
+            const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+            const entry = { date: new Date().toISOString(), day: currentDayIndex + 1, dayName: day.name, weekCommencing, log };
             history.unshift(entry);
-            saveToStorage('workoutHistory', history);
-            if (unsavedDrafts[weekCommencing]) {
-                delete unsavedDrafts[weekCommencing][currentDay];
-                if (Object.keys(unsavedDrafts[weekCommencing]).length === 0) delete unsavedDrafts[weekCommencing];
-            }
-            saveToStorage('unsavedDrafts', unsavedDrafts);
-            alert('Workout saved! ✅');
-            window.location.reload();
-        };
-
-        function selectDay(day, btn) {
-            captureUnsavedData(null, currentDay);
-            currentDay = day;
-            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderWorkout();
+            localStorage.setItem('workoutHistory', JSON.stringify(history));
+            if (unsavedDrafts[weekCommencing]) delete unsavedDrafts[weekCommencing][currentDayIndex];
+            localStorage.setItem('unsavedDrafts', JSON.stringify(unsavedDrafts));
+            alert('Workout saved!');
+            window.location.href = 'history.html';
         }
 
         function startApp() {
@@ -291,20 +318,29 @@
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
             document.getElementById('week-commencing').value = monday.toISOString().split('T')[0];
 
-            unsavedDrafts = loadFromStorage('unsavedDrafts');
-
             const weekInput = document.getElementById('week-commencing');
-            const snapToMonday = () => {
-                let selected = weekInput.value;
-                if (selected) {
-                    const monday = getMonday(selected);
-                    if (monday !== selected) weekInput.value = monday;
-                }
-                captureUnsavedData();
-                renderWorkout();
-            };
+            weekInput.addEventListener('change', () => {
+                weekInput.value = getMonday(weekInput.value);
+                renderWorkout();          // ← THIS WAS MISSING – NOW FIXED
+            });
 
-            weekInput.addEventListener('change', snapToMonday);
+            const params = new URLSearchParams(window.location.search);
+            const pastIndex = params.get('pastIndex');
+            if (pastIndex !== null) {
+                const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
+                const entry = history[pastIndex];
+                if (entry) {
+                    currentSplitId = entry.day <= 5 ? "default" : "custom";
+                    currentDayIndex = entry.day - 1;
+                    renderSplitSelector();
+                    renderDayButtons();
+                    renderWorkout(entry.log);
+                    return;
+                }
+            }
+
+            renderSplitSelector();
+            renderDayButtons();
             renderWorkout();
         }
 
