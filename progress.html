@@ -4,13 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Progress - Alex's Workout Tracker</title>
-    
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#00ff9d">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
     <style>
         :root { --accent: #00ff9d; }
         * { box-sizing: border-box; }
@@ -26,15 +19,6 @@
         .stat-card { background:#1c1c1c; padding:20px; margin-bottom:16px; border-radius:16px; }
         .best-item { background:#1c1c1c; padding:18px; margin-bottom:12px; border-radius:16px; display:flex; justify-content:space-between; align-items:center; }
     </style>
-
-    <!-- Register Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js');
-        });
-      }
-    </script>
 </head>
 <body>
 
