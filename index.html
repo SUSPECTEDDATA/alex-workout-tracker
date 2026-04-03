@@ -170,6 +170,7 @@
             day.exercises.forEach((ex, exIndex) => {
                 const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
                 html += `<div class="exercise"><div class="exercise-name">${ex.name}</div><table><tr><th>Set</th><th>Weight (kg)</th><th>Reps</th><th>Done</th><th></th></tr>`;
+
                 currentSets.forEach((setData, setIndex) => {
                     const provisionalClass = (isProvisional && (setData.weight || setData.reps)) ? 'provisional' : '';
                     html += `<tr>
@@ -184,7 +185,32 @@
             });
             container.innerHTML = html;
 
-            // Live update on changes
+            // Auto-copy from first set to other non-provisional sets
+            const exercises = container.querySelectorAll('.exercise');
+            exercises.forEach(exercise => {
+                const rows = exercise.querySelectorAll('tr');
+                if (rows.length < 2) return;
+
+                // First set (index 1 because row 0 is the header)
+                const firstWeightInput = rows[1].querySelector('.weight-input');
+                const firstRepsInput = rows[1].querySelector('.reps-input');
+
+                const copyValue = (input, type) => {
+                    if (!input.value) return;
+                    for (let i = 2; i < rows.length; i++) {
+                        const targetInput = rows[i].querySelector(`.${type}-input`);
+                        if (targetInput && !targetInput.classList.contains('provisional')) {
+                            targetInput.value = input.value;
+                        }
+                    }
+                    captureUnsavedData();
+                };
+
+                if (firstWeightInput) firstWeightInput.addEventListener('change', () => copyValue(firstWeightInput, 'weight'));
+                if (firstRepsInput) firstRepsInput.addEventListener('change', () => copyValue(firstRepsInput, 'reps'));
+            });
+
+            // General change listeners
             const allInputs = container.querySelectorAll('input.weight-input, input.reps-input, input.done-checkbox');
             allInputs.forEach(input => {
                 input.addEventListener('change', () => {
@@ -259,7 +285,6 @@
         }
 
         function startApp() {
-            // Week commencing
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
@@ -268,14 +293,13 @@
             const weekInput = document.getElementById('week-commencing');
             weekInput.addEventListener('change', () => { weekInput.value = getMonday(weekInput.value); });
 
-            // Check if we are loading a past workout
             const params = new URLSearchParams(window.location.search);
             const pastIndex = params.get('pastIndex');
             if (pastIndex !== null) {
                 const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
                 const entry = history[pastIndex];
                 if (entry) {
-                    currentSplitId = entry.day <= 5 ? "default" : "custom"; // simple fallback
+                    currentSplitId = entry.day <= 5 ? "default" : "custom";
                     currentDayIndex = entry.day - 1;
                     renderSplitSelector();
                     renderDayButtons();
