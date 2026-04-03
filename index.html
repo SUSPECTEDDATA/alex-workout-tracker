@@ -51,7 +51,7 @@
         <div class="split-selector">
             <label style="font-weight:600;">Using Split:</label><br>
             <select id="split-selector" onchange="changeSplit()" style="width:100%;padding:14px;background:#222;border:2px solid #333;color:#fff;border-radius:12px;font-size:18px;">
-                <option value="default">Default 5-Day Plan</option>
+                <option value="default">Alex's Plan</option>
                 <option value="custom">Custom Split: Upper Body Focus</option>
             </select>
         </div>
@@ -65,11 +65,11 @@
 
     <script>
         let currentSplit = "default";           // "default" or "custom"
-        let currentDayIndex = 0;                // 0-based index in the split's days array
+        let currentDayIndex = 0;
         let unsavedDrafts = {};
 
-        const defaultPlan = { /* your original 5-day plan */ 
-            name: "Default 5-Day Plan",
+        const defaultPlan = { 
+            name: "Alex's Plan",
             days: [
                 { name: "Day 1 – Chest + Back", exercises: [{name:"Barbell Bench Press",sets:4},{name:"Bent-Over Barbell Row",sets:4},{name:"Seated Chest Press Machine",sets:4},{name:"Wide-Grip Lat Pulldown",sets:4},{name:"Cable Flyes",sets:3},{name:"Close-Grip Lat Pulldown",sets:3}] },
                 { name: "Day 2 – Shoulders + Arms", exercises: [{name:"Standing Overhead Barbell Press",sets:4},{name:"Dumbbell Lateral Raises",sets:4},{name:"Rear Delt Flyes",sets:3},{name:"Single Arm Tricep Pushdown",sets:4},{name:"Overhead Dumbbell Tricep Extension",sets:3},{name:"Alternating Dumbbell Curl",sets:4},{name:"Preacher Curl",sets:3},{name:"Reverse Preacher Curl",sets:3}] },
@@ -131,7 +131,7 @@
             menu.classList.toggle('show');
         }
 
-        function saveWorkout() { /* your existing save logic – unchanged */ 
+        function saveWorkout() {
             const splitData = currentSplit === "default" ? defaultPlan : loadCustomSplit() || defaultPlan;
             const day = splitData.days[currentDayIndex];
             const log = [];
@@ -158,7 +158,6 @@
         }
 
         function startApp() {
-            // Set default week
             const today = new Date();
             let monday = new Date(today);
             monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
