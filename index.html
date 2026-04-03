@@ -172,23 +172,37 @@
                 const week = document.getElementById('week-commencing').value;
                 const history = JSON.parse(localStorage.getItem('workoutHistory') || '[]');
                 const existing = history.find(e => e.weekCommencing === week && e.day === currentDayIndex + 1);
-                if (existing) useLog = existing.log;
-                else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) useLog = unsavedDrafts[week][currentDayIndex];
-                else {
+
+                if (existing) {
+                    useLog = existing.log;                     // saved workout for this week – keep as-is
+                } else if (unsavedDrafts[week] && unsavedDrafts[week][currentDayIndex]) {
+                    useLog = unsavedDrafts[week][currentDayIndex];
+                } else {
+                    // NEW FIXED LOGIC – always use the plan's set counts
+                    useLog = day.exercises.map(ex => ({
+                        name: ex.name,
+                        sets: Array(ex.sets || 4).fill().map(() => ({weight:'', reps:'', completed:false}))
+                    }));
+
+                    // Smart pre-fill from most recent workout of the same day
                     const sorted = [...history].sort((a,b) => new Date(b.date)-new Date(a.date));
-                    const last = sorted.find(e => e.day === currentDayIndex + 1);
-                    if (last) {
-                        useLog = last.log.map(ex => ({...ex, sets: ex.sets.map(s => ({...s, completed:false}))}));
+                    const lastSimilar = sorted.find(e => e.day === currentDayIndex + 1);
+                    if (lastSimilar) {
                         isProvisional = true;
-                    } else {
-                        useLog = day.exercises.map(ex => ({
-                            name: ex.name,
-                            sets: Array(ex.sets || 4).fill().map(() => ({weight:'', reps:'', completed:false}))
-                        }));
+                        lastSimilar.log.forEach(oldEx => {
+                            const target = useLog.find(ex => ex.name === oldEx.name);
+                            if (target) {
+                                const len = Math.min(target.sets.length, oldEx.sets.length);
+                                for (let i = 0; i < len; i++) {
+                                    target.sets[i] = {...oldEx.sets[i], completed: false};
+                                }
+                            }
+                        });
                     }
                 }
             }
 
+            // === Render the table (always respects the current plan's set counts) ===
             let html = '';
             day.exercises.forEach((ex, exIndex) => {
                 const currentSets = useLog[exIndex] ? useLog[exIndex].sets : [];
@@ -321,7 +335,7 @@
             const weekInput = document.getElementById('week-commencing');
             weekInput.addEventListener('change', () => {
                 weekInput.value = getMonday(weekInput.value);
-                renderWorkout();          // ← THIS WAS MISSING – NOW FIXED
+                renderWorkout();
             });
 
             const params = new URLSearchParams(window.location.search);
