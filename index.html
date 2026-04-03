@@ -110,10 +110,11 @@
             container.innerHTML = '';
             const allSplits = loadAllSplits();
             const split = allSplits.find(s => s.id === currentSplitId) || defaultPlan;
+
             split.days.forEach((day, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'day-btn' + (i === currentDayIndex ? ' active' : '');
-                btn.textContent = `Day ${i+1}`;
+                btn.textContent = day.name;                    // ← FULL NAME FOR CUSTOM SPLITS
                 btn.onclick = () => { currentDayIndex = i; renderDayButtons(); renderWorkout(); };
                 container.appendChild(btn);
             });
